@@ -1,0 +1,22 @@
+<component name="libraryTable">
+  <library name="spigot">
+    <CLASSES>
+      <root url="jar://D:/Spigot/BuildTools/spigot.jar!/" />
+      <root url="file://D:/Spigot/BuildTools/Spigot" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://D:/Spigot/BuildTools/spigot.jar!/" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Bukkit/src/main/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Bukkit/src/main/javadoc" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Bukkit/src/test/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/CraftBukkit/src/main/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/CraftBukkit/src/test/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Spigot-API/src/main/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Spigot-API/src/main/javadoc" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Spigot-API/src/test/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Spigot-Server/src/main/java" />
+      <root url="file://D:/Spigot/BuildTools/Spigot/Spigot-Server/src/test/java" />
+    </SOURCES>
+  </library>
+</component>

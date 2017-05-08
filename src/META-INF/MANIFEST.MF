@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: spigot.jar CorpseReborn.jar
+Main-Class: sk.perri.murdermystery.Main
+

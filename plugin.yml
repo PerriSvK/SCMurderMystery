@@ -1,0 +1,14 @@
+name: SCMurderMystery
+version: 1.0.0
+author: PerriSvK
+depend: [CorpseReborn]
+main: sk.perri.murdermystery.Main
+commands:
+  setup:
+    description: Minigame setup command
+    usage: Use "/setup help" to view help
+    aliases: [s]
+  murder:
+    description: Minigame base command
+    usage: Use "/murder help" to view help
+    aliases: [md]
