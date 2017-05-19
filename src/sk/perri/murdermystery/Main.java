@@ -2,6 +2,7 @@ package sk.perri.murdermystery;
 
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
 import me.mirek.devtools.api.DevTools;
+import me.mirek.devtools.api.utils.BungeeAPI;
 import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -14,6 +15,7 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
@@ -98,8 +100,18 @@ public class Main extends JavaPlugin implements Listener
             return;
 
         hra.addPlayer(event.getPlayer());
+
+        // INV
         event.getPlayer().getInventory().clear();
         event.getPlayer().getInventory().setHeldItemSlot(0);
+
+        // BACK TO LOBBY IS
+        ItemStack btl = new ItemStack(Material.BED, 1);
+        ItemMeta btlim = btl.getItemMeta();
+        btlim.setDisplayName(ChatColor.RED+""+ChatColor.BOLD+"ZPĚT DO LOBBY");
+        btl.setItemMeta(btlim);
+        event.getPlayer().getInventory().setItem(8, btl);
+
         event.getPlayer().setPlayerListName(ChatColor.MAGIC+"------");
 
         if((hra.getState() != GameState.Lobby) && (hra.getState() != GameState.Starting))
@@ -120,6 +132,7 @@ public class Main extends JavaPlugin implements Listener
             hra.start(false);
         }
         TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
+
     }
 
     @EventHandler
@@ -293,8 +306,25 @@ public class Main extends JavaPlugin implements Listener
     }
 
     @EventHandler
-    private void onSword(final PlayerInteractEvent event)
+    public void onBedClick(PlayerInteractEvent event)
     {
+        if(hra.getState() == GameState.Ingame)
+            return;
+
+        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BED)
+        {
+            event.setCancelled(true);
+
+            BungeeAPI.sendToLobby(event.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onSword(final PlayerInteractEvent event)
+    {
+        if(hra.getState() != GameState.Ingame)
+            return;
+
         if(event.getPlayer().getInventory().getItemInOffHand() != null &&
                 event.getPlayer().getInventory().getItemInOffHand().getType() == Material.SHIELD)
             return;

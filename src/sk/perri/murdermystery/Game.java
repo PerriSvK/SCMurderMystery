@@ -348,7 +348,8 @@ public class Game
         }
     }
 
-    private void spawnItem() {
+    private void spawnItem()
+    {
         itemsLocation.get(0).getWorld().dropItemNaturally(itemsLocation.get(new Random().nextInt(itemsLocation.size())),
                 new ItemStack(Material.GOLD_INGOT, 1));
     }
@@ -360,10 +361,14 @@ public class Game
         if (!alive.contains(killer)) {
             go = true;
             reason = KILLER_DEAD;
-        } else if (alive.size() == 1) {
+        }
+        else if (alive.size() == 1)
+        {
             go = true;
             reason = ALL_DEAD;
-        } else if (time <= 0) {
+        }
+        else if (time <= 0)
+        {
             go = true;
             reason = TIME_OUT;
         }
@@ -393,7 +398,8 @@ public class Game
         if (killer == null)
             return;
 
-        switch (reason) {
+        switch (reason)
+        {
             case ALL_DEAD:
                 s += Lang.KILLER;
                 Main.get().getServer().getOnlinePlayers().forEach(p ->
@@ -433,19 +439,23 @@ public class Game
     }
 
     // Set + Get
-    public void setState(GameState state) {
+    public void setState(GameState state)
+    {
         this.state = state;
     }
 
-    GameState getState() {
+    GameState getState()
+    {
         return state;
     }
 
-    int getCountdown() {
+    int getCountdown()
+    {
         return countdown;
     }
 
-    Vector<Clovek> getAlive() {
+    Vector<Clovek> getAlive()
+    {
         return alive;
     }
 
