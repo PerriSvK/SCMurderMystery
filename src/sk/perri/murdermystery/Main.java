@@ -2,6 +2,7 @@ package sk.perri.murdermystery;
 
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
 import me.mirek.devtools.api.DevTools;
+import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -122,6 +123,7 @@ public class Main extends JavaPlugin implements Listener
             getServer().broadcastMessage(Lang.ABLE_TO_START);
             hra.start(false);
         }
+        TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
     }
 
     @EventHandler
