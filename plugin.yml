@@ -11,4 +11,4 @@ commands:
   murder:
     description: Minigame base command
     usage: Use "/murder help" to view help
-    aliases: [md]
+    aliases: [mm]

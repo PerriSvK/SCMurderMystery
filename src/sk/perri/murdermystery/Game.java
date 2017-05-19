@@ -18,7 +18,8 @@ import java.util.*;
 
 import static sk.perri.murdermystery.enums.GameOverReason.*;
 
-public class Game {
+public class Game
+{
     private ArrayList<Player> civilians = new ArrayList<>();
     private Vector<Clovek> alive = new Vector<>();
     private Vector<Clovek> spect = new Vector<>();
@@ -32,6 +33,7 @@ public class Game {
     private int countdown = -1;
     private GameState state;
     private DetectiveStatus detectiveStatus = DetectiveStatus.Null;
+    private Vector<String> inno = new Vector<>();
 
     Game() {
         state = GameState.Lobby;

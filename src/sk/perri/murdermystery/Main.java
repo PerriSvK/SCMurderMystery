@@ -4,7 +4,6 @@ import com.connorlinfoot.actionbarapi.ActionBarAPI;
 import me.mirek.devtools.api.DevTools;
 import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,7 +17,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
-import org.bukkit.util.Vector;
 import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 import sk.perri.murdermystery.commands.Murder;
 import sk.perri.murdermystery.commands.Setup;
@@ -27,9 +25,7 @@ import sk.perri.murdermystery.enums.GameState;
 import sk.perri.murdermystery.enums.PlayerType;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class Main extends JavaPlugin implements Listener
 {
@@ -314,7 +310,7 @@ public class Main extends JavaPlugin implements Listener
             /*IChatBaseComponent barmsg = IChatBaseComponent.ChatSerializer.a("{\"text\":\"§f[§c||||||||§f]\"}");
             PacketPlayOutChat bar = new PacketPlayOutChat(barmsg, (byte) 2);
             ((CraftPlayer) event.getPlayer()).getHandle().playerConnection.sendPacket(bar);*/
-            ActionBarAPI.sendActionBar(event.getPlayer(), "§c§l||||||");
+            ActionBarAPI.sendActionBar(event.getPlayer(), "§c§l||||");
 
             // Time to throw 2 sec = 40 ticks
             swordTask = getServer().getScheduler().runTaskTimer(this, () ->
@@ -322,7 +318,7 @@ public class Main extends JavaPlugin implements Listener
                 if(event.getPlayer().isBlocking())
                 {
                     String text1 = String.join("", Collections.nCopies(holdTime[0], "§a§l|"))+
-                            String.join("", Collections.nCopies(3 - holdTime[0], "§c§l|"));
+                            String.join("", Collections.nCopies(4 - holdTime[0], "§c§l|"));
                     ActionBarAPI.sendActionBar(event.getPlayer(), text1);
                     if(holdTime[0] > 3)
                     {
@@ -614,6 +610,7 @@ public class Main extends JavaPlugin implements Listener
         double d7 = Math.sin(d5) * Math.sin(d4); // Z
         double d8 = Math.cos(d5); // Y
         int moveTime[] = {0};
+        double speed = 1.0;
 
         moveTask = getServer().getScheduler().runTaskTimer(this, () ->
         {
@@ -625,9 +622,9 @@ public class Main extends JavaPlugin implements Listener
                 destroySword();
             }
 
-            location.setX(location.getX() + d6*0.5);
-            location.setY(location.getY() + d8*0.5);
-            location.setZ(location.getZ() + d7*0.5);
+            location.setX(location.getX() + d6*speed);
+            location.setY(location.getY() + d8*speed);
+            location.setZ(location.getZ() + d7*speed);
 
             swordStand.teleport(location);
 
