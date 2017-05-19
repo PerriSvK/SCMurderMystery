@@ -464,7 +464,7 @@ public class Main extends JavaPlugin implements Listener
         {
             hra.getAlive().forEach(c -> event.getRecipients().remove(c.getPlayer()));
             String s = event.getMessage();
-            event.setMessage(ChatColor.GRAY+"[DEAD CHAT] "+s);
+            event.setMessage(ChatColor.GRAY+s);
         }
     }
 
