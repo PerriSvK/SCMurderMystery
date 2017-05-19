@@ -33,6 +33,7 @@ public class Main extends JavaPlugin implements Listener
     private Game hra;
     private Location lobbyLocation = null;
     private ArmorStand swordStand = null;
+    private ArmorStand bowStand = null;
     private BukkitTask swordTask = null;
     private BukkitTask moveTask = null;
 
@@ -685,8 +686,10 @@ public class Main extends JavaPlugin implements Listener
     {
         return hra;
     }
+    public ArmorStand getBowStand() { return bowStand; }
+    public void setBowStand(ArmorStand ne) { bowStand = ne; }
 }
 
 /*
-TODO Percentage, DB
+TODO Percentage, DB, trail, sword spices
  */

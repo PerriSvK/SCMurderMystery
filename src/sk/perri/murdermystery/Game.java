@@ -4,6 +4,7 @@ import me.mirek.devtools.api.currencies.LuckyShardsAPI;
 import me.mirek.devtools.api.currencies.PointsAPI;
 import me.mirek.devtools.api.utils.BungeeAPI;
 import org.bukkit.*;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -307,6 +308,18 @@ public class Game
             ItemStack com = new ItemStack(Material.COMPASS, 1);
             c.getPlayer().getInventory().setItem(4, com);
         }
+
+        //Setting bow text stand
+        if(bowLocation != null)
+        {
+            Location bsl = new Location(bowLocation.getWorld(), bowLocation.getX(), bowLocation.getY()+1, bowLocation.getZ());
+            ArmorStand bs = bowLocation.getWorld().spawn(bowLocation, ArmorStand.class);
+            bs.setVisible(false);
+            bs.setCustomName(ChatColor.BLUE+""+ChatColor.BOLD+"LUK");
+            bs.setCustomNameVisible(true);
+            Main.get().setBowStand(bs);
+        }
+
     }
 
     private void removeCompass() {
@@ -315,6 +328,13 @@ public class Game
                 continue;
 
             o.getPlayer().getInventory().remove(Material.COMPASS);
+        }
+
+        if(Main.get().getBowStand() != null)
+        {
+            Main.get().getBowStand().setCustomNameVisible(false);
+            Main.get().getBowStand().remove();
+            Main.get().setBowStand(null);
         }
     }
 
