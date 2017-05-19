@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="ActionBarAPI-1.5.2">
     <CLASSES>
-      <root url="jar://D:/Spigot/BuildTools/plugins/ActionBarAPI-1.5.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libraries/ActionBarAPI-1.5.2.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

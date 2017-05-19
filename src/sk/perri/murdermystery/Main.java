@@ -1,6 +1,7 @@
 package sk.perri.murdermystery;
 
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
+import me.mirek.devtools.api.DevTools;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -55,6 +56,8 @@ public class Main extends JavaPlugin implements Listener
         loadLocations();
         getCommand("setup").setExecutor(new Setup());
         getCommand("murder").setExecutor(new Murder());
+
+        DevTools.registerChat();
     }
 
     @Override

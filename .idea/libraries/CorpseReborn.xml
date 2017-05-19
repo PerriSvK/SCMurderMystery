@@ -1,10 +1,10 @@
 <component name="libraryTable">
   <library name="CorpseReborn">
     <CLASSES>
-      <root url="jar://D:/Spigot/BuildTools/plugins/CorpseReborn.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libraries/CorpseReborn.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://D:/Spigot/BuildTools/plugins/CorpseReborn.jar!/doc" />
+      <root url="jar://$PROJECT_DIR$/libraries/CorpseReborn.jar!/doc" />
     </JAVADOC>
     <SOURCES />
   </library>
