@@ -81,10 +81,9 @@ public class Main extends JavaPlugin implements Listener
                     }
 
                     if (localEntity.getType() == EntityType.ARMOR_STAND
-                            && localEntity.getCustomName() != null
-                            && localEntity.getCustomName().contains("sword") &&
+                            && (localEntity.getCustomName() != null ||
                             (((ArmorStand) localEntity).getItemInHand().getType() == Material.IRON_SWORD ||
-                                    ((ArmorStand) localEntity).getItemInHand().getType() == Material.BOW))
+                                    ((ArmorStand) localEntity).getItemInHand().getType() == Material.BOW)))
                         localEntity.remove();
                 }
             }

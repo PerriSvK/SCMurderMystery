@@ -430,7 +430,6 @@ public class Game
         {
             Main.get().getServer().shutdown();
         }, 550);
-
     }
 
     // Set + Get
