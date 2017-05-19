@@ -424,8 +424,7 @@ public class Game
         Main.get().getServer().broadcastMessage(Lang.SERVER_RESTART);
         Bukkit.getScheduler().runTaskLater(Main.get(), () ->
         {
-            //Main.get().getServer().getOnlinePlayers().forEach(p -> p.kickPlayer(Lang.KICK_MSG));
-            Main.get().getServer().getOnlinePlayers().forEach(p -> p.performCommand("/lobby"));
+            Main.get().getServer().getOnlinePlayers().forEach(p -> p.kickPlayer(Lang.KICK_MSG));
             Main.get().getServer().shutdown();
         }, 400);
     }
