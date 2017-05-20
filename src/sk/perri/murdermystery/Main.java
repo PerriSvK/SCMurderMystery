@@ -39,6 +39,8 @@ public class Main extends JavaPlugin implements Listener
     private BukkitTask swordTask = null;
     private BukkitTask moveTask = null;
 
+    private static double SwordCooldown = 0.0;
+
     public static Main get()
     {
         return plugin;
@@ -60,6 +62,26 @@ public class Main extends JavaPlugin implements Listener
         DevTools.registerChat();
 
         Bukkit.getPluginManager().registerEvents(new PingListener(),this);
+        swordTimer();
+    }
+
+    public void swordTimer(){
+        swordTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            String toDisplay = "§f§lVrhnutí §f - §a";
+            if(SwordCooldown > 0){
+                SwordCooldown-= 0.1;
+                int green = (int) ((4.0 - SwordCooldown) / 0.1);
+                int gray = (int) (SwordCooldown / 0.1);
+                for(int x = 0;x < green;x++){
+                    toDisplay = toDisplay + ";";
+                }
+                toDisplay = toDisplay + "§7";
+                for(int x = 0;x < gray;x++){
+                    toDisplay = toDisplay + ";";
+                }
+                ActionBarAPI.sendActionBar(getHra().getKiller().getPlayer(),toDisplay);
+            }
+        }, 2L, 2L);
     }
 
     @Override
@@ -327,25 +349,25 @@ public class Main extends JavaPlugin implements Listener
         if(hra.getState() != GameState.Ingame)
             return;
 
-        if(event.getPlayer().getInventory().getItemInOffHand() != null &&
+        /*if(event.getPlayer().getInventory().getItemInOffHand() != null &&
                 event.getPlayer().getInventory().getItemInOffHand().getType() == Material.SHIELD)
-            return;
+            return;*/
 
         final Player localPlayer = event.getPlayer();
         if(event.getItem() == null || event.getItem().getType() != Material.IRON_SWORD)
             return;
 
-        if(event.getAction().name().toLowerCase().contains("right"))
+        if(event.getAction().name().toLowerCase().contains("right") && SwordCooldown <= 0)
         {
-            event.getPlayer().getInventory().setItemInOffHand(new ItemStack(Material.SHIELD, 1));
-            final int[] holdTime = {1};
-            /*IChatBaseComponent barmsg = IChatBaseComponent.ChatSerializer.a("{\"text\":\"§f[§c||||||||§f]\"}");
-            PacketPlayOutChat bar = new PacketPlayOutChat(barmsg, (byte) 2);
-            ((CraftPlayer) event.getPlayer()).getHandle().playerConnection.sendPacket(bar);*/
-            ActionBarAPI.sendActionBar(event.getPlayer(), "§c§l||||");
+            createSword(event.getPlayer());
+            SwordCooldown = 4.0;
+
+            //event.getPlayer().getInventory().setItemInOffHand(new ItemStack(Material.SHIELD, 1));
+            //final int[] holdTime = {1};
+            //ActionBarAPI.sendActionBar(event.getPlayer(), "§c§l||||");
 
             // Time to throw 2 sec = 40 ticks
-            swordTask = getServer().getScheduler().runTaskTimer(this, () ->
+            /*swordTask = getServer().getScheduler().runTaskTimer(this, () ->
             {
                 if(event.getPlayer().isBlocking())
                 {
@@ -364,7 +386,7 @@ public class Main extends JavaPlugin implements Listener
                 {
                     stopSwordCounter(false, event.getPlayer());
                 }
-            }, 10L, 10L);
+            }, 5L, 5L);*/
         }
 
         /*if (event.getAction().name().toLowerCase().contains("right"))
