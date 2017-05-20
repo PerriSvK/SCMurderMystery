@@ -3,6 +3,7 @@ package sk.perri.murdermystery;
 import me.mirek.devtools.api.currencies.LuckyShardsAPI;
 import me.mirek.devtools.api.currencies.PointsAPI;
 import me.mirek.devtools.api.utils.BungeeAPI;
+import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -104,7 +105,7 @@ public class Game
 
     void killPlayer(Clovek clovek, boolean voi) {
         alive.remove(clovek);
-        clovek.getPlayer().sendTitle(Lang.P_MSG_KILLED, "", 10, 60, 10);
+        TitleAPI.sendTitle(clovek.getPlayer(),Lang.P_MSG_KILLED, 10, 60, 10);
         Main.get().getServer().broadcastMessage(Lang.DEAD_MSG + " " + ChatColor.RED + clovek.getPlayer().getDisplayName());
 
         if (clovek.getType() == PlayerType.Detective) {
@@ -175,7 +176,7 @@ public class Game
                         cc = ChatColor.DARK_RED;
                 }
 
-                alive.forEach(c -> c.getPlayer().sendTitle(cc + "" + ChatColor.BOLD + countdown, "", 5, 10, 5));
+                alive.forEach(c -> TitleAPI.sendTitle(c.getPlayer(),cc + "" + countdown, 5, 10, 5));
             }
 
             if (countdown <= 1) {
@@ -253,7 +254,8 @@ public class Game
         Random r = new Random();
         killer = alive.get(r.nextInt(alive.size()));
         killer.setType(PlayerType.Killer);
-        killer.getPlayer().sendTitle(Lang.MURDERER_INFO_1, Lang.MURDERER_INFO_2, 20, 60, 20);
+        TitleAPI.sendTitle(killer.getPlayer(),Lang.MURDERER_INFO_1, 20, 60, 20);
+        TitleAPI.sendSubTitle(killer.getPlayer(),Lang.MURDERER_INFO_2, 20, 60, 20);
         killer.getPlayer().sendMessage(Lang.MURDERER_INFO_1 + " " + Lang.MURDERER_INFO_2 +
                 " Meč hodíš podržením pravého tlačítka myši!");
 
@@ -263,7 +265,8 @@ public class Game
         }
 
         detective.setType(PlayerType.Detective);
-        detective.getPlayer().sendTitle(Lang.DETECTIVE_INFO_1, Lang.DETECTIVE_INFO_2, 20, 60, 20);
+        TitleAPI.sendTitle(detective.getPlayer(),Lang.DETECTIVE_INFO_1, 20, 60, 20);
+        TitleAPI.sendSubTitle(detective.getPlayer(),Lang.DETECTIVE_INFO_2, 20, 60, 20);
         detectiveStatus = DetectiveStatus.Alive;
         detective.getPlayer().sendMessage(Lang.DETECTIVE_INFO_1 + " " + Lang.DETECTIVE_INFO_2 +
                 " Po vystrelení získaš šíp po 4 sekundách!");
@@ -271,7 +274,8 @@ public class Game
 
         for (Clovek c : alive) {
             if (c != killer && c != detective) {
-                c.getPlayer().sendTitle(Lang.INOCENT_INFO_1, Lang.INOCENT_INFO_2, 20, 60, 20);
+                TitleAPI.sendTitle(c.getPlayer(),Lang.INOCENT_INFO_1, 20, 60, 20);
+                TitleAPI.sendSubTitle(c.getPlayer(),Lang.INOCENT_INFO_2, 20, 60, 20);
                 c.getPlayer().sendMessage(Lang.INOCENT_INFO_1 + " " + Lang.INOCENT_INFO_2
                         + " Seber 10 goldů získej luk a zabij vraha!");
                 civilians.add(c.getPlayer());
@@ -403,8 +407,12 @@ public class Game
             case ALL_DEAD:
                 s += Lang.KILLER;
                 Main.get().getServer().getOnlinePlayers().forEach(p ->
-                        p.sendTitle(Lang.LOOSE_MORE, Lang.I_LOOSE_REASON, 10, 80, 10));
-                killer.getPlayer().sendTitle(Lang.WIN, Lang.KILLER_WIN_REASON, 10, 80, 10);
+                {
+                    TitleAPI.sendTitle(p,Lang.LOOSE_MORE, 10, 80, 10);
+                    TitleAPI.sendSubTitle(p,Lang.I_LOOSE_REASON, 10, 80, 10);
+                });
+                TitleAPI.sendTitle(killer.getPlayer(),Lang.WIN, 10, 80, 10);
+                TitleAPI.sendSubTitle(killer.getPlayer(),Lang.KILLER_WIN_REASON, 10, 80, 10);
                 PointsAPI.addPoints(killer.getPlayer(), 100);
                 LuckyShardsAPI.addLuckyShards(killer.getPlayer(), 10);
                 killer.getPlayer().sendMessage("§8[] §e§l+ 10 LuckyShards");
@@ -417,11 +425,14 @@ public class Game
                             LuckyShardsAPI.addLuckyShards(p, 5);
                             p.sendMessage("§8[] §e§l+ 5 LuckyShards");
                             p.sendMessage("§8[] §9§l+ 50 StylePoints");
-                            p.sendTitle(Lang.WIN_MORE, Lang.KILLER_STOPPED, 10, 80, 10);
+                            TitleAPI.sendTitle(p,Lang.WIN_MORE, 10, 80, 10);
+                            TitleAPI.sendSubTitle(p,Lang.KILLER_STOPPED, 10, 80, 10);
+
                         }
 
                 );
-                killer.getPlayer().sendTitle(Lang.LOOSE, Lang.KILLER_LOOSE_REASON, 10, 80, 10);
+                TitleAPI.sendTitle(killer.getPlayer(),Lang.LOOSE, 10, 80, 10);
+                TitleAPI.sendSubTitle(killer.getPlayer(),Lang.KILLER_LOOSE_REASON, 10, 80, 10);
                 break;
         }
 

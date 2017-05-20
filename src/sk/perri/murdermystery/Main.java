@@ -58,6 +58,8 @@ public class Main extends JavaPlugin implements Listener
         getCommand("murder").setExecutor(new Murder());
 
         DevTools.registerChat();
+
+        Bukkit.getPluginManager().registerEvents(new PingListener(),this);
     }
 
     @Override
