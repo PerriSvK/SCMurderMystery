@@ -250,7 +250,8 @@ public class Game
     }
 
     // functions
-    private void roleRole() {
+    private void roleRole()
+    {
         Random r = new Random();
         killer = alive.get(r.nextInt(alive.size()));
         killer.setType(PlayerType.Killer);

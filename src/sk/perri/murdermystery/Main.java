@@ -111,6 +111,9 @@ public class Main extends JavaPlugin implements Listener
                             (((ArmorStand) localEntity).getItemInHand().getType() == Material.IRON_SWORD ||
                                     ((ArmorStand) localEntity).getItemInHand().getType() == Material.BOW)))
                         localEntity.remove();
+
+                    if (localEntity.getType() == EntityType.COW)
+                        localEntity.remove();
                 }
             }
         }, 60L);
@@ -183,10 +186,7 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onDropItem(PlayerDropItemEvent event)
     {
-        if(hra.getState() == GameState.Start || hra.getState() == GameState.Ingame)
-        {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true);
     }
 
     @EventHandler
@@ -610,6 +610,8 @@ public class Main extends JavaPlugin implements Listener
         getConfig().set("spawn."+i+".z", loc.getZ());
         getConfig().set("spawn."+i+".yaw", loc.getYaw());
         getConfig().set("spawn."+i+".pitch", loc.getPitch());
+
+
     }
 
     public void setItemLocation(Location loc)
