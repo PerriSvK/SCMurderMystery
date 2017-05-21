@@ -106,10 +106,7 @@ public class Main extends JavaPlugin implements Listener
                         continue;
                     }
 
-                    if (localEntity.getType() == EntityType.ARMOR_STAND
-                            && (localEntity.getCustomName() != null ||
-                            (((ArmorStand) localEntity).getItemInHand().getType() == Material.IRON_SWORD ||
-                                    ((ArmorStand) localEntity).getItemInHand().getType() == Material.BOW)))
+                    if (localEntity.getType() == EntityType.ARMOR_STAND && localEntity.getCustomName() != null)
                         localEntity.remove();
 
                     if (localEntity.getType() == EntityType.COW)
@@ -138,6 +135,13 @@ public class Main extends JavaPlugin implements Listener
         btlim.setDisplayName(ChatColor.RED+""+ChatColor.BOLD+"ZPĚT DO LOBBY");
         btl.setItemMeta(btlim);
         event.getPlayer().getInventory().setItem(8, btl);
+
+        // DECORATION MENU IS
+        ItemStack dm = new ItemStack(Material.BLAZE_POWDER, 1);
+        ItemMeta dmim = dm.getItemMeta();
+        dmim.setDisplayName(ChatColor.DARK_PURPLE+""+ChatColor.BOLD+"KOSMETIK MENU");
+        dm.setItemMeta(dmim);
+        event.getPlayer().getInventory().setItem(4, dm);
 
         event.getPlayer().setPlayerListName(ChatColor.MAGIC+"------");
 
@@ -253,7 +257,32 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onInvClick(InventoryClickEvent event)
     {
-        event.setCancelled(true);
+        try
+        {
+            if (event.getClickedInventory().getTitle().contains("KOSMETIK"))
+            {
+                if (event.getCurrentItem().getType() != Material.AIR &&
+                        (event.getWhoClicked().hasPermission("murder.swords."+
+                                event.getCurrentItem().getType().name().toLowerCase()) ||
+                        event.getCurrentItem().getType() == Material.IRON_SWORD))
+                {
+                    hra.findClovek((Player) event.getWhoClicked()).setSword(event.getCurrentItem().getType());
+                    event.getWhoClicked().closeInventory();
+
+                    getServer().getScheduler().runTaskLater(this, () ->
+                                    event.getWhoClicked().openInventory(InvBuilder.buildInv((Player) event.getWhoClicked())),
+                            2L);
+                }
+            }
+        }
+        catch (NullPointerException e)
+        {
+            getLogger().warning("Null pointer - kosmetik menu");
+        }
+        finally
+        {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -330,7 +359,7 @@ public class Main extends JavaPlugin implements Listener
     }
 
     @EventHandler
-    public void onBedClick(PlayerInteractEvent event)
+    public void onItemClick(PlayerInteractEvent event)
     {
         if(hra.getState() == GameState.Ingame)
             return;
@@ -340,6 +369,12 @@ public class Main extends JavaPlugin implements Listener
             event.setCancelled(true);
 
             BungeeAPI.sendToLobby(event.getPlayer());
+        }
+
+        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_POWDER)
+        {
+            getServer().getScheduler().runTaskLater(this, () ->
+                    event.getPlayer().openInventory(InvBuilder.buildInv(event.getPlayer())), 2L);
         }
     }
 
@@ -354,7 +389,7 @@ public class Main extends JavaPlugin implements Listener
             return;*/
 
         final Player localPlayer = event.getPlayer();
-        if(event.getItem() == null || event.getItem().getType() != Material.IRON_SWORD)
+        if(event.getItem() == null || event.getItem().getType() != hra.getKiller().getSword())
             return;
 
         if(event.getAction().name().toLowerCase().contains("right") && SwordCooldown <= 0)
@@ -527,7 +562,7 @@ public class Main extends JavaPlugin implements Listener
     {
         return damager instanceof Arrow && ((Arrow) damager).getShooter() instanceof Player ||
                 (damager instanceof Player &&
-                ((Player) damager).getInventory().getItemInMainHand().getType() == Material.IRON_SWORD);
+                ((Player) damager).getInventory().getItemInMainHand().getType() == hra.getKiller().getSword());
 
     }
 
@@ -734,7 +769,7 @@ public class Main extends JavaPlugin implements Listener
 
         player.getInventory().setItemInMainHand(null);
         getServer().getScheduler().runTaskLater(this, () -> player.getInventory().setItem(1,
-                new ItemStack(Material.IRON_SWORD, 1)), 60);
+                new ItemStack(hra.getKiller().getSword(), 1)), 60);
     }
 
     public Game getHra()

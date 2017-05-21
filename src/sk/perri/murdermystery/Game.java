@@ -106,7 +106,7 @@ public class Game
     void killPlayer(Clovek clovek, boolean voi) {
         alive.remove(clovek);
         TitleAPI.sendTitle(clovek.getPlayer(),Lang.P_MSG_KILLED, 10, 60, 10);
-        Main.get().getServer().broadcastMessage(Lang.DEAD_MSG + " " + ChatColor.RED + clovek.getPlayer().getDisplayName());
+        //Main.get().getServer().broadcastMessage(Lang.DEAD_MSG + " " + ChatColor.RED + clovek.getPlayer().getDisplayName());
 
         if (clovek.getType() == PlayerType.Detective) {
             resetBow(voi);
@@ -117,6 +117,12 @@ public class Game
         clovek.getSBManager().createSpectBoard();
 
         CorpseAPI.spawnCorpse(clovek.getPlayer(), clovek.getPlayer().getLocation());
+
+        // SOUND
+        for(Player p : Main.get().getServer().getOnlinePlayers())
+        {
+            p.getWorld().playSound(clovek.getPlayer().getLocation(), Sound.ENTITY_PLAYER_DEATH, 100, 1);
+        }
     }
 
     // Positions
@@ -139,7 +145,8 @@ public class Game
     // Main game STRUCTURE
     public void start(boolean force) {
         // start countdown
-        if (countdown > 0) {
+        if (countdown > 0)
+        {
             if (force && countdown > 6)
                 countdown = 5;
 
@@ -289,7 +296,7 @@ public class Game
         Bukkit.getScheduler().runTaskLater(Main.get(), () ->
         {
             Main.get().getServer().broadcastMessage(Lang.W_H_G);
-            killer.getPlayer().getInventory().setItem(1, new ItemStack(Material.IRON_SWORD, 1));
+            killer.getPlayer().getInventory().setItem(1, new ItemStack(killer.getSword(), 1));
             if (detective != null) {
                 detective.getPlayer().getInventory().setItem(1, new ItemStack(Material.BOW, 1));
                 detective.getPlayer().getInventory().setItem(2, new ItemStack(Material.ARROW, 1));

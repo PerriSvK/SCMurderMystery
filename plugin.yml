@@ -12,3 +12,18 @@ commands:
     description: Minigame base command
     usage: Use "/murder help" to view help
     aliases: [mm]
+permissions:
+  murder.*:
+    default: op
+  murder.swords.*:
+    default: op
+  murder.swords.wood_sword:
+    default: op
+  murder.swords.stone_sword:
+    default: op
+  murder.swords.iron_sword:
+    default: true
+  murder.swords.gold_sword:
+    default: op
+  murder.swords.diamond_sword:
+    default: op
