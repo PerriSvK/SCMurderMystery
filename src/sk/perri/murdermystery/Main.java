@@ -25,9 +25,11 @@ import sk.perri.murdermystery.commands.Setup;
 import sk.perri.murdermystery.enums.DetectiveStatus;
 import sk.perri.murdermystery.enums.GameState;
 import sk.perri.murdermystery.enums.PlayerType;
+import sk.perri.murdermystery.enums.Traily;
 
 import java.io.File;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main extends JavaPlugin implements Listener
 {
@@ -38,6 +40,8 @@ public class Main extends JavaPlugin implements Listener
     private ArmorStand bowStand = null;
     private BukkitTask swordTask = null;
     private BukkitTask moveTask = null;
+    private Particle particle = Particle.HEART;
+    private Map<Projectile, Particle> sipi = new HashMap<>();
 
     private static double SwordCooldown = 0.0;
 
@@ -259,20 +263,22 @@ public class Main extends JavaPlugin implements Listener
     {
         try
         {
-            if (event.getClickedInventory().getTitle().contains("KOSMETIK"))
+            if (event.getClickedInventory().getTitle().contains("KOSMETIK") && event.getCurrentItem().getType() != Material.AIR)
             {
-                if (event.getCurrentItem().getType() != Material.AIR &&
+                if(event.getSlot() >= 11 && event.getSlot() <= 15 &&
                         (event.getWhoClicked().hasPermission("murder.swords."+
-                                event.getCurrentItem().getType().name().toLowerCase()) ||
+                        event.getCurrentItem().getType().name().toLowerCase()) ||
                         event.getCurrentItem().getType() == Material.IRON_SWORD))
-                {
                     hra.findClovek((Player) event.getWhoClicked()).setSword(event.getCurrentItem().getType());
-                    event.getWhoClicked().closeInventory();
+                else if(event.getSlot() >= 37 && event.getWhoClicked().hasPermission("murder.trails."+
+                        Traily.getPerm()[event.getSlot()-37]))
+                    hra.findClovek((Player) event.getWhoClicked()).setTrail(Traily.getParticles()[event.getSlot()-37]);
+                else if(event.getSlot() == 36)
+                    hra.findClovek((Player) event.getWhoClicked()).setTrail(null);
 
-                    getServer().getScheduler().runTaskLater(this, () ->
-                                    event.getWhoClicked().openInventory(InvBuilder.buildInv((Player) event.getWhoClicked())),
-                            2L);
-                }
+                event.getWhoClicked().closeInventory();
+                getServer().getScheduler().runTaskLater(this, () ->
+                        event.getWhoClicked().openInventory(InvBuilder.buildInv((Player) event.getWhoClicked())),2L);
             }
         }
         catch (NullPointerException e)
@@ -530,8 +536,18 @@ public class Main extends JavaPlugin implements Listener
                     if (hra.getDetective() != null)
                         hra.getDetective().getPlayer().getInventory().setItem(2, new ItemStack(Material.ARROW, 1));
                 }, 100);
+
+                if(c.getTrail() != null)
+                    sipi.put((Projectile) event.getProjectile(), c.getTrail());
             }
         }
+    }
+
+    @EventHandler
+    public void onArrowHit(ProjectileHitEvent event)
+    {
+        if(sipi.containsKey(event.getEntity()))
+            sipi.remove(event.getEntity());
     }
 
     @EventHandler
@@ -778,8 +794,10 @@ public class Main extends JavaPlugin implements Listener
     }
     public ArmorStand getBowStand() { return bowStand; }
     public void setBowStand(ArmorStand ne) { bowStand = ne; }
+    public Map<Projectile, Particle> getSipi() { return sipi; }
+    public void setParticle(String s) { particle = Particle.valueOf(s); }
 }
 
 /*
-TODO Percentage, DB, trail, sword spices
+TODO Percentage, DB
  */

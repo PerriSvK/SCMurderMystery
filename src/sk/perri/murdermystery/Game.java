@@ -8,6 +8,7 @@ import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.golde.bukkit.corpsereborn.CorpseAPI.CorpseAPI;
@@ -28,6 +29,7 @@ public class Game
     private Vector<Location> spawn = new Vector<>();
     private Vector<Location> itemsLocation = new Vector<>();
     private Location bowLocation = null;
+    private int ticks = 6000;
     private int time = 300;
     private Clovek killer = null;
     private Clovek detective = null;
@@ -74,7 +76,8 @@ public class Game
         spect.removeIf(c -> c.getPlayer().getUniqueId() == player.getUniqueId());
     }
 
-    void killPlayer(Player killer, Player victim) {
+    void killPlayer(Player killer, Player victim)
+    {
         Clovek vrah = findClovek(killer);
         Clovek obet = findClovek(victim);
 
@@ -82,13 +85,15 @@ public class Game
                 obet.getType() == PlayerType.None || obet.getType() == PlayerType.Spectator)
             return;
 
-        if (!(vrah.getType() == PlayerType.Killer || obet.getType() == PlayerType.Killer)) {
+        if (!(vrah.getType() == PlayerType.Killer || obet.getType() == PlayerType.Killer))
+        {
             vrah.addScore(ScoreTable.I_KILL_I);
             Main.get().getLogger().info("I KILL I");
             killPlayer(vrah, false);
         }
 
-        if (vrah.getType() == PlayerType.Killer) {
+        if (vrah.getType() == PlayerType.Killer)
+        {
             if (obet.getType() == PlayerType.Detective)
                 vrah.addScore(ScoreTable.M_KILL_D);
             else
@@ -98,7 +103,8 @@ public class Game
         if (obet.getType() == PlayerType.Killer)
             vrah.addScore(ScoreTable.I_KILL_M);
 
-        killPlayer(obet, false);
+        if(vrah.getPlayer().getUniqueId() != obet.getPlayer().getUniqueId())
+            killPlayer(obet, false);
     }
 
     // void killPlayer(Player player) { killPlayer(findClovek(player)); }
@@ -186,7 +192,7 @@ public class Game
                 alive.forEach(c -> TitleAPI.sendTitle(c.getPlayer(),cc + "" + countdown, 5, 10, 5));
             }
 
-            if (countdown <= 1) {
+            if (countdown < 1) {
                 stopCountdown();
                 loop();
             }
@@ -209,7 +215,8 @@ public class Game
 
         Main.get().getServer().broadcastMessage(Lang.GAME_START);
 
-        for (int i = 0; i < alive.size(); i++) {
+        for (int i = 0; i < alive.size(); i++)
+        {
             Clovek c = alive.get(i);
             c.getPlayer().teleport(spawn.get(ik.get(i)));
             c.getPlayer().getInventory().clear();
@@ -225,6 +232,18 @@ public class Game
         // main game loop
         task = Bukkit.getScheduler().runTaskTimer(Main.get(), () ->
         {
+            countdown--;
+
+            for(Map.Entry<Projectile, Particle>  en : Main.get().getSipi().entrySet())
+            {
+                en.getKey().getLocation().getWorld().spawnParticle(en.getValue(), en.getKey().getLocation(), 2, 0.2, 0.2, 0.2);
+            }
+
+            if(countdown % 20 != 0)
+            {
+                return;
+            }
+
             time--;
             if (time % 3 == 0) {
                 spawnItem();
@@ -245,7 +264,7 @@ public class Game
             murderCompass();
             // check if anyone win
             winCheck();
-        }, 10, 20);
+        }, 10, 1);
     }
 
     // Countdown

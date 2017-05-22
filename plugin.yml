@@ -27,3 +27,39 @@ permissions:
     default: op
   murder.swords.diamond_sword:
     default: op
+  murder.trails.*:
+    default: op
+  murder.trails.heart:
+    default: op
+  murder.trails.spell:
+    default: op
+  murder.trails.witch:
+    default: op
+  murder.trails.flame:
+    default: op
+  murder.trails.lava:
+    default: op
+  murder.trails.totem:
+    default: op
+  murder.trails.note:
+    default: op
+  murder.trails.dmg:
+    default: op
+  murder.trails.slime:
+    default: op
+  murder.trails.snowball:
+    default: op
+  murder.trails.angry:
+    default: op
+  murder.trails.happy:
+    default: op
+  murder.trails.redstone:
+    default: op
+  murder.trails.water:
+    default: op
+  murder.trails.crit:
+    default: op
+  murder.trails.rod:
+    default: op
+  murder.trails.explo:
+    default: op

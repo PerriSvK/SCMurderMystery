@@ -17,6 +17,9 @@ public class Murder implements CommandExecutor
         if(sender instanceof Player && !sender.isOp())
             return true;
 
+        if(args[0].equalsIgnoreCase("par"))
+            Main.get().setParticle(args[1]);
+
         if(Main.get().getServer().getOnlinePlayers().size() < 2)
         {
             sender.sendMessage("Malo hracov, treba aspon 2!");

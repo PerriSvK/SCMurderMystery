@@ -1,6 +1,7 @@
 package sk.perri.murdermystery;
 
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import sk.perri.murdermystery.enums.PlayerType;
 
@@ -11,6 +12,7 @@ public class Clovek
     private SBManager board;
     private int score;
     private Material sword = Material.IRON_SWORD;
+    private Particle trail = null;
 
     public Clovek(Player player, SBManager board)
     {
@@ -57,5 +59,15 @@ public class Clovek
     public void setSword(Material sword)
     {
         this.sword = sword;
+    }
+
+    public Particle getTrail()
+    {
+        return trail;
+    }
+
+    public void setTrail(Particle particle)
+    {
+        trail = particle;
     }
 }
