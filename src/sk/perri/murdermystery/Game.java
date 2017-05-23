@@ -6,7 +6,6 @@ import me.mirek.devtools.api.utils.BungeeAPI;
 import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.inventory.ItemStack;
@@ -39,7 +38,8 @@ public class Game
     private DetectiveStatus detectiveStatus = DetectiveStatus.Null;
     private Vector<String> inno = new Vector<>();
 
-    Game() {
+    Game()
+    {
         state = GameState.Lobby;
     }
 
@@ -76,9 +76,9 @@ public class Game
         spect.removeIf(c -> c.getPlayer().getUniqueId() == player.getUniqueId());
     }
 
-    void killPlayer(Player killer, Player victim)
+    void killPlayer(Player kille, Player victim)
     {
-        Clovek vrah = findClovek(killer);
+        Clovek vrah = findClovek(kille);
         Clovek obet = findClovek(victim);
 
         if (vrah.getType() == PlayerType.Spectator || vrah.getType() == PlayerType.None ||
@@ -88,7 +88,6 @@ public class Game
         if (!(vrah.getType() == PlayerType.Killer || obet.getType() == PlayerType.Killer))
         {
             vrah.addScore(ScoreTable.I_KILL_I);
-            Main.get().getLogger().info("I KILL I");
             killPlayer(vrah, false);
         }
 
@@ -101,7 +100,9 @@ public class Game
         }
 
         if (obet.getType() == PlayerType.Killer)
+        {
             vrah.addScore(ScoreTable.I_KILL_M);
+        }
 
         if(vrah.getPlayer().getUniqueId() != obet.getPlayer().getUniqueId())
             killPlayer(obet, false);
@@ -144,7 +145,7 @@ public class Game
         return getSpawn().firstElement();
     }
 
-    Clovek getKiller() {
+    public Clovek getKiller() {
         return killer;
     }
 
@@ -319,7 +320,9 @@ public class Game
             if (detective != null) {
                 detective.getPlayer().getInventory().setItem(1, new ItemStack(Material.BOW, 1));
                 detective.getPlayer().getInventory().setItem(2, new ItemStack(Material.ARROW, 1));
-            } else {
+            }
+            else
+            {
                 if (bowLocation == null)
                     bowLocation = spawn.get(0);
 
@@ -385,11 +388,13 @@ public class Game
                 new ItemStack(Material.GOLD_INGOT, 1));
     }
 
-    void winCheck() {
+    void winCheck()
+    {
         boolean go = false;
         GameOverReason reason = NULL;
 
-        if (!alive.contains(killer)) {
+        if (!alive.contains(killer))
+        {
             go = true;
             reason = KILLER_DEAD;
         }
@@ -403,8 +408,14 @@ public class Game
             go = true;
             reason = TIME_OUT;
         }
+        else if(killer == null)
+        {
+            go = true;
+            reason = KILLER_LEFT;
+        }
 
-        if (go) {
+        if (go)
+        {
             state = GameState.End;
             gameOver(reason);
         }
@@ -447,17 +458,16 @@ public class Game
                 break;
             default:
                 s += Lang.DETECTIVE;
-                civilians.forEach(p -> {
-                            PointsAPI.addPoints(p, 50);
-                            LuckyShardsAPI.addLuckyShards(p, 5);
-                            p.sendMessage("§8[] §e§l+ 5 LuckyShards");
-                            p.sendMessage("§8[] §9§l+ 50 StylePoints");
-                            TitleAPI.sendTitle(p,Lang.WIN_MORE, 10, 80, 10);
-                            TitleAPI.sendSubTitle(p,Lang.KILLER_STOPPED, 10, 80, 10);
+                civilians.forEach(p ->
+                {
+                    PointsAPI.addPoints(p, 50);
+                    LuckyShardsAPI.addLuckyShards(p, 5);
+                    p.sendMessage("§8[] §e§l+ 5 LuckyShards");
+                    p.sendMessage("§8[] §9§l+ 50 StylePoints");
+                    TitleAPI.sendTitle(p,Lang.WIN_MORE, 10, 80, 10);
+                    TitleAPI.sendSubTitle(p,Lang.KILLER_STOPPED, 10, 80, 10);
 
-                        }
-
-                );
+                });
                 TitleAPI.sendTitle(killer.getPlayer(),Lang.LOOSE, 10, 80, 10);
                 TitleAPI.sendSubTitle(killer.getPlayer(),Lang.KILLER_LOOSE_REASON, 10, 80, 10);
                 break;
@@ -482,7 +492,7 @@ public class Game
         this.state = state;
     }
 
-    GameState getState()
+    public GameState getState()
     {
         return state;
     }
@@ -497,7 +507,7 @@ public class Game
         return alive;
     }
 
-    Clovek getDetective() {
+    public Clovek getDetective() {
         return detective;
     }
 

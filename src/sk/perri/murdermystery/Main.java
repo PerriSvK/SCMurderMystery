@@ -168,6 +168,9 @@ public class Main extends JavaPlugin implements Listener
         }
         TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
 
+        // BETA INFO
+        event.getPlayer().sendMessage(ChatColor.GOLD+"Ahoj, táto hra je ešte stále vo vývoji! Môže sa stať, že niečo"+
+        " nebude "+ChatColor.RED+"fungovať"+ChatColor.GOLD+" tak, ako by malo. Ak nájdeš chybu napíš prosím Perrimu. Ďakujem.");
     }
 
     @EventHandler
@@ -185,8 +188,11 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onQuit(PlayerQuitEvent event)
     {
-        hra.removePlayer(event.getPlayer());
+        if(hra.getState() != GameState.End)
+            hra.removePlayer(event.getPlayer());
+
         event.setQuitMessage("");
+
         if(hra.getState() == GameState.Ingame)
             hra.winCheck();
     }
@@ -200,6 +206,12 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onPickupItem(PlayerPickupItemEvent event)
     {
+        if(hra.getState() == GameState.End)
+        {
+            event.setCancelled(true);
+            return;
+        }
+
         if(event.getItem().getItemStack().getType() == Material.GOLD_INGOT)
         {
             Clovek c = hra.findClovek(event.getPlayer());
@@ -223,6 +235,13 @@ public class Main extends JavaPlugin implements Listener
                     event.getPlayer().getInventory().setItem(8, is);
                 }
                 event.getPlayer().getInventory().setItem(2, new ItemStack(Material.BOW, 1));
+
+                int poc = 0;
+
+                if(event.getPlayer().getInventory().getItem(3) != null &&
+                        event.getPlayer().getInventory().getItem(3).getType() == Material.ARROW)
+                    poc = event.getPlayer().getInventory().getItem(3).getAmount();
+
                 event.getPlayer().getInventory().setItem(3, new ItemStack(Material.ARROW, 1));
             }
             else
@@ -316,6 +335,8 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event)
     {
+        event.setCancelled(true);
+
         if(event.getDamager() instanceof Player && event.getEntity() instanceof Player && hra.getState() == GameState.Ingame &&
                 isValidWeapon(event.getDamager()))
         {
@@ -326,9 +347,8 @@ public class Main extends JavaPlugin implements Listener
                 event.getEntity() instanceof Player && hra.getState() == GameState.Ingame && isValidWeapon(event.getDamager()))
         {
             hra.killPlayer(getKiller(event.getDamager()), (Player) event.getEntity());
+            event.getDamager().remove();
         }
-
-        event.setCancelled(true);
     }
 
     @EventHandler

@@ -10,9 +10,9 @@ public class Traily
             ChatColor.RED+""+ChatColor.BOLD+"Srdíčka", ChatColor.GREEN+""+ChatColor.BOLD+"Kroužky",
             ChatColor.DARK_PURPLE+""+ChatColor.BOLD+"Hvězdičky", ChatColor.RED+""+ChatColor.BOLD+"Plamínky",
             ChatColor.RED+""+ChatColor.BOLD+"Láva", ChatColor.BLUE+""+ChatColor.BOLD+"Kuličky",
-            ChatColor.GREEN+""+ChatColor.BOLD+"Noty", ChatColor.BLACK+""+ChatColor.BOLD+"Černý srdíčka",
+            ChatColor.GREEN+""+ChatColor.BOLD+"Noty", ChatColor.DARK_BLUE+""+ChatColor.BOLD+"Černá srdíčka",
             ChatColor.GREEN+""+ChatColor.BOLD+"Slime", ChatColor.AQUA+""+ChatColor.BOLD+"Snehové koule",
-            ChatColor.DARK_RED+""+ChatColor.BOLD+"Brambory", ChatColor.DARK_GREEN+""+ChatColor.BOLD+"Zelený hvězdy",
+            ChatColor.DARK_RED+""+ChatColor.BOLD+"Brambory", ChatColor.DARK_GREEN+""+ChatColor.BOLD+"Zelené hvězdy",
             ChatColor.RED+""+ChatColor.BOLD+"Redstone", ChatColor.BLUE+""+ChatColor.BOLD+"Voda",
             ChatColor.DARK_AQUA+""+ChatColor.BOLD+"Bublinky", ChatColor.LIGHT_PURPLE+""+ChatColor.BOLD+"Prskalky",
             ChatColor.BLUE+""+ChatColor.BOLD+"Vločky"

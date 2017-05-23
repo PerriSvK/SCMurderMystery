@@ -217,7 +217,7 @@ class SBManager
         //cas
         board.getTeam("h").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
         //obcani
-        board.getTeam("i").setSuffix(ChatColor.RED+""+Main.get().getHra().getAlive().size());
+        board.getTeam("i").setSuffix(ChatColor.RED+""+(Main.get().getHra().getAlive().size()-1));
         // detektiv
         String de = "";
         switch (Main.get().getHra().getDetectiveStatus())
