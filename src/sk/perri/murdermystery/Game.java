@@ -9,6 +9,9 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.golde.bukkit.corpsereborn.CorpseAPI.CorpseAPI;
 import sk.perri.murdermystery.enums.DetectiveStatus;
@@ -49,18 +52,30 @@ public class Game
         alive.forEach(cl -> cl.getSBManager().registerPlayer(player));
         spect.forEach(cl -> cl.getSBManager().registerPlayer(player));
 
-        if ((state == GameState.Starting || state == GameState.Lobby) && alive.size() < Main.get().getConfig().getInt("maxplayers")) {
+        if ((state == GameState.Starting || state == GameState.Lobby) && alive.size() < Main.get().getConfig().getInt("maxplayers"))
+        {
             alive.add(c);
             player.setGameMode(GameMode.ADVENTURE);
+            player.setFlying(false);
+            player.setAllowFlight(false);
             c.setType(PlayerType.None);
-        } else {
+        }
+        else
+        {
             spect.add(c);
             c.setType(PlayerType.Spectator);
-            player.setGameMode(GameMode.SPECTATOR);
+            player.setGameMode(GameMode.ADVENTURE);
+            player.setAllowFlight(true);
+            player.setFlying(true);
+
+            Main.get().getServer().getOnlinePlayers().forEach(p -> p.hidePlayer(player));
+            spect.forEach(sp -> player.hidePlayer(sp.getPlayer()));
+            giveSpectItems(player);
         }
     }
 
-    void removePlayer(Player player) {
+    void removePlayer(Player player)
+    {
         if (detective != null && detective.getPlayer().getUniqueId().equals(player.getUniqueId()))
             killPlayer(detective, false);
 
@@ -110,16 +125,23 @@ public class Game
 
     // void killPlayer(Player player) { killPlayer(findClovek(player)); }
 
-    void killPlayer(Clovek clovek, boolean voi) {
+    void killPlayer(Clovek clovek, boolean voi)
+    {
         alive.remove(clovek);
         TitleAPI.sendTitle(clovek.getPlayer(),Lang.P_MSG_KILLED, 10, 60, 10);
+        clovek.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 60, 1));
         //Main.get().getServer().broadcastMessage(Lang.DEAD_MSG + " " + ChatColor.RED + clovek.getPlayer().getDisplayName());
 
-        if (clovek.getType() == PlayerType.Detective) {
+        if (clovek.getType() == PlayerType.Detective)
+        {
             resetBow(voi);
         }
+
         clovek.setType(PlayerType.Spectator);
-        clovek.getPlayer().setGameMode(GameMode.SPECTATOR);
+
+        //clovek.getPlayer().setGameMode(GameMode.SPECTATOR);
+
+        Main.get().getServer().getOnlinePlayers().forEach(c -> c.getPlayer().hidePlayer(clovek.getPlayer()));
         spect.add(clovek);
         clovek.getSBManager().createSpectBoard();
 
@@ -130,6 +152,16 @@ public class Game
         {
             p.getWorld().playSound(clovek.getPlayer().getLocation(), Sound.ENTITY_PLAYER_DEATH, 100, 1);
         }
+
+        // INV
+        clovek.getPlayer().getInventory().clear();
+
+        // GIVE ITEMS
+        giveSpectItems(clovek.getPlayer());
+
+        //FLY
+        clovek.getPlayer().setAllowFlight(true);
+        clovek.getPlayer().setFlying(true);
     }
 
     // Positions
@@ -204,7 +236,8 @@ public class Game
         }, 0L, 20L);
     }
 
-    private void loop() {
+    private void loop()
+    {
         // port players to the spawn
         List<Integer> ik = new ArrayList<>();
 
@@ -248,6 +281,7 @@ public class Game
             time--;
             if (time % 3 == 0) {
                 spawnItem();
+                spawnItem();
             }
 
             if (time % 30 == 0) {
@@ -261,7 +295,7 @@ public class Game
             // Update scoreboards
             alive.forEach(c -> c.getSBManager().updateGameBoard(c.getScore()));
             spect.forEach(c -> c.getSBManager().updateSpectBoard());
-            // Update killer compass
+            // Update killer compassw
             murderCompass();
             // check if anyone win
             winCheck();
@@ -421,7 +455,8 @@ public class Game
         }
     }
 
-    private void resetBow(boolean voi) {
+    private void resetBow(boolean voi)
+    {
         detectiveStatus = DetectiveStatus.Killed;
         bowLocation = voi ? spawn.get(0) : detective.getPlayer().getLocation();
 
@@ -432,13 +467,16 @@ public class Game
         giveBowCompass();
     }
 
-    private void gameOver(GameOverReason reason) {
+    private void gameOver(GameOverReason reason)
+    {
         Bukkit.getScheduler().cancelAllTasks();
 
         String s = "";
 
         if (killer == null)
             return;
+
+        killer.getPlayer().getWorld().playSound(killer.getPlayer().getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 100, 1);
 
         switch (reason)
         {
@@ -484,6 +522,23 @@ public class Game
         {
             Main.get().getServer().shutdown();
         }, 550);
+    }
+
+    private void giveSpectItems(Player player)
+    {
+        // BACK TO LOBBY IS
+        ItemStack btl = new ItemStack(Material.BED, 1);
+        ItemMeta btlim = btl.getItemMeta();
+        btlim.setDisplayName(ChatColor.RED+""+ChatColor.BOLD+"ZPĚT DO LOBBY");
+        btl.setItemMeta(btlim);
+        player.getInventory().setItem(8, btl);
+
+        // Compass
+        ItemStack co = new ItemStack(Material.COMPASS, 1);
+        ItemMeta coim = co.getItemMeta();
+        coim.setDisplayName(ChatColor.AQUA+""+ChatColor.BOLD+"HRÁČI");
+        co.setItemMeta(coim);
+        player.getInventory().setItem(0, co);
     }
 
     // Set + Get

@@ -8,6 +8,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.material.MaterialData;
 import sk.perri.murdermystery.enums.Traily;
 
@@ -19,7 +20,7 @@ public class InvBuilder
 {
     private InvBuilder() { }
 
-    static Inventory buildInv(Player player)
+    static Inventory buildKosmeticInv(Player player)
     {
         Inventory inv = Bukkit.createInventory(null, 54, ChatColor.DARK_PURPLE+"KOSMETIK MENU");
         inv.setItem(11, craftItem(Material.WOOD_SWORD, player));
@@ -108,5 +109,23 @@ public class InvBuilder
         is.setItemMeta(im);
 
         return is;
+    }
+
+    public static Inventory buildCompassInv()
+    {
+        Inventory inv = Bukkit.createInventory(null, 18, ChatColor.AQUA+"HRÁČI");
+
+        for(Clovek c : Main.get().getHra().getAlive())
+        {
+            ItemStack is = new ItemStack(Material.SKULL_ITEM, 1);
+            is.setDurability((short) 3);
+            SkullMeta sm = (SkullMeta) is.getItemMeta();
+            sm.setOwner(c.getPlayer().getDisplayName());
+            sm.setDisplayName(c.getPlayer().getDisplayName());
+            is.setItemMeta(sm);
+            inv.addItem(is);
+        }
+
+        return inv;
     }
 }

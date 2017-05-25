@@ -40,7 +40,6 @@ public class Main extends JavaPlugin implements Listener
     private ArmorStand bowStand = null;
     private BukkitTask swordTask = null;
     private BukkitTask moveTask = null;
-    private Particle particle = Particle.HEART;
     private Map<Projectile, Particle> sipi = new HashMap<>();
 
     private static double SwordCooldown = 0.0;
@@ -69,21 +68,21 @@ public class Main extends JavaPlugin implements Listener
         swordTimer();
     }
 
-    public void swordTimer(){
+    private void swordTimer(){
         swordTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
-            String toDisplay = "§f§lVrhnutí §f - §a";
+            StringBuilder toDisplay = new StringBuilder("§f§lVrhnutí §f - §a");
             if(SwordCooldown > 0){
                 SwordCooldown-= 0.1;
                 int green = (int) ((4.0 - SwordCooldown) / 0.1);
                 int gray = (int) (SwordCooldown / 0.1);
                 for(int x = 0;x < green;x++){
-                    toDisplay = toDisplay + ";";
+                    toDisplay.append(";");
                 }
-                toDisplay = toDisplay + "§7";
+                toDisplay.append("§7");
                 for(int x = 0;x < gray;x++){
-                    toDisplay = toDisplay + ";";
+                    toDisplay.append(";");
                 }
-                ActionBarAPI.sendActionBar(getHra().getKiller().getPlayer(),toDisplay);
+                ActionBarAPI.sendActionBar(getHra().getKiller().getPlayer(), toDisplay.toString());
             }
         }, 2L, 2L);
     }
@@ -127,8 +126,6 @@ public class Main extends JavaPlugin implements Listener
         if(!getConfig().isSet("lobby.x"))
             return;
 
-        hra.addPlayer(event.getPlayer());
-
         // INV
         event.getPlayer().getInventory().clear();
         event.getPlayer().getInventory().setHeldItemSlot(0);
@@ -147,7 +144,10 @@ public class Main extends JavaPlugin implements Listener
         dm.setItemMeta(dmim);
         event.getPlayer().getInventory().setItem(4, dm);
 
-        event.getPlayer().setPlayerListName(ChatColor.MAGIC+"------");
+        // Hide players nickname in TAB
+        //event.getPlayer().setPlayerListName(ChatColor.MAGIC+"------");
+
+        hra.addPlayer(event.getPlayer());
 
         if((hra.getState() != GameState.Lobby) && (hra.getState() != GameState.Starting))
             event.setJoinMessage("");
@@ -206,7 +206,8 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onPickupItem(PlayerPickupItemEvent event)
     {
-        if(hra.getState() == GameState.End)
+        if(hra.getState() == GameState.End || hra.findClovek(event.getPlayer()).getType() == PlayerType.Spectator
+                || hra.findClovek(event.getPlayer()).getType() == PlayerType.None)
         {
             event.setCancelled(true);
             return;
@@ -242,7 +243,7 @@ public class Main extends JavaPlugin implements Listener
                         event.getPlayer().getInventory().getItem(3).getType() == Material.ARROW)
                     poc = event.getPlayer().getInventory().getItem(3).getAmount();
 
-                event.getPlayer().getInventory().setItem(3, new ItemStack(Material.ARROW, 1));
+                event.getPlayer().getInventory().setItem(3, new ItemStack(Material.ARROW, poc + 1));
             }
             else
             {
@@ -297,7 +298,23 @@ public class Main extends JavaPlugin implements Listener
 
                 event.getWhoClicked().closeInventory();
                 getServer().getScheduler().runTaskLater(this, () ->
-                        event.getWhoClicked().openInventory(InvBuilder.buildInv((Player) event.getWhoClicked())),2L);
+                        event.getWhoClicked().openInventory(InvBuilder.buildKosmeticInv((Player) event.getWhoClicked())),2L);
+            }
+
+            if(event.getClickedInventory().getTitle().contains("HRÁČI") && event.getCurrentItem().getType() != Material.AIR)
+            {
+                if(Bukkit.getPlayer(event.getCurrentItem().getItemMeta().getDisplayName()) != null &&
+                        hra.getAlive().contains(hra.findClovek(Bukkit.getPlayer(event.getCurrentItem().getItemMeta().getDisplayName()))))
+                {
+                    event.getWhoClicked().teleport(Bukkit.getPlayer(event.getCurrentItem().getItemMeta().getDisplayName()).getLocation());
+                    event.getWhoClicked().closeInventory();
+                }
+                else
+                {
+                    event.getWhoClicked().closeInventory();
+                    getServer().getScheduler().runTaskLater(this, () ->
+                            event.getWhoClicked().openInventory(InvBuilder.buildCompassInv()) ,2L);
+                }
             }
         }
         catch (NullPointerException e)
@@ -346,6 +363,12 @@ public class Main extends JavaPlugin implements Listener
         if(event.getDamager() instanceof Arrow && ((Arrow) event.getDamager()).getShooter() instanceof Player &&
                 event.getEntity() instanceof Player && hra.getState() == GameState.Ingame && isValidWeapon(event.getDamager()))
         {
+            if(hra.findClovek((Player) event.getEntity()).getType() == PlayerType.Spectator)
+            {
+                spawnNewArrow((Arrow) event.getDamager(), (Player) event.getEntity());
+                return;
+            }
+
             hra.killPlayer(getKiller(event.getDamager()), (Player) event.getEntity());
             event.getDamager().remove();
         }
@@ -387,9 +410,6 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onItemClick(PlayerInteractEvent event)
     {
-        if(hra.getState() == GameState.Ingame)
-            return;
-
         if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BED)
         {
             event.setCancelled(true);
@@ -400,7 +420,14 @@ public class Main extends JavaPlugin implements Listener
         if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_POWDER)
         {
             getServer().getScheduler().runTaskLater(this, () ->
-                    event.getPlayer().openInventory(InvBuilder.buildInv(event.getPlayer())), 2L);
+                    event.getPlayer().openInventory(InvBuilder.buildKosmeticInv(event.getPlayer())), 2L);
+        }
+
+        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.COMPASS &&
+                (hra.findClovek(event.getPlayer()).getType() == PlayerType.Spectator ||
+                hra.findClovek(event.getPlayer()).getType() == PlayerType.None))
+        {
+            event.getPlayer().openInventory(InvBuilder.buildCompassInv());
         }
     }
 
@@ -410,11 +437,6 @@ public class Main extends JavaPlugin implements Listener
         if(hra.getState() != GameState.Ingame)
             return;
 
-        /*if(event.getPlayer().getInventory().getItemInOffHand() != null &&
-                event.getPlayer().getInventory().getItemInOffHand().getType() == Material.SHIELD)
-            return;*/
-
-        final Player localPlayer = event.getPlayer();
         if(event.getItem() == null || event.getItem().getType() != hra.getKiller().getSword())
             return;
 
@@ -700,6 +722,25 @@ public class Main extends JavaPlugin implements Listener
         getConfig().set("itemlocation."+i+".pitch", loc.getPitch());
     }
 
+    private void spawnNewArrow(Arrow arrow, Player entity)
+    {
+        entity.setGameMode(GameMode.SPECTATOR);
+        Projectile na = entity.launchProjectile(Arrow.class);
+        na.setShooter(arrow.getShooter());
+        na.setVelocity(arrow.getVelocity());
+        na.setBounce(arrow.doesBounce());
+
+        if(sipi.containsKey(arrow))
+        {
+            Particle p = sipi.get(arrow);
+            sipi.put(na, p);
+            sipi.remove(arrow);
+        }
+
+        arrow.remove();
+        getServer().getScheduler().runTaskLater(this, () -> entity.setGameMode(GameMode.ADVENTURE), 3L);
+    }
+
     // TODO DEBUG
     // SWORD THROWING
     private void createSword(Player player)
@@ -771,9 +812,10 @@ public class Main extends JavaPlugin implements Listener
             return;
         }
 
-        for(Entity e : location.getWorld().getNearbyEntities(location, 1, 2, 1))
+        for(Entity e : location.getWorld().getNearbyEntities(location, 0.75, 2, 0.75))
         {
-            if(e.getType() == EntityType.PLAYER && !((Player) e).getUniqueId().equals(player.getUniqueId()))
+            if(e.getType() == EntityType.PLAYER && ! e.getUniqueId().equals(player.getUniqueId()) &&
+                    hra.getAlive().contains(hra.findClovek(((Player) e).getPlayer())))
             {
                 if(hra.getKiller() != null)
                     hra.killPlayer(hra.getKiller().getPlayer(), (Player) e);
@@ -812,10 +854,9 @@ public class Main extends JavaPlugin implements Listener
     {
         return hra;
     }
-    public ArmorStand getBowStand() { return bowStand; }
-    public void setBowStand(ArmorStand ne) { bowStand = ne; }
-    public Map<Projectile, Particle> getSipi() { return sipi; }
-    public void setParticle(String s) { particle = Particle.valueOf(s); }
+    ArmorStand getBowStand() { return bowStand; }
+    void setBowStand(ArmorStand ne) { bowStand = ne; }
+    Map<Projectile, Particle> getSipi() { return sipi; }
 }
 
 /*
