@@ -77,7 +77,7 @@ public class InvBuilder
 
         switch (m)
         {
-            case WOOD_SWORD: nazov = "Dřevěnný meč"; break;
+            case WOOD_SWORD: nazov = "Dřevěný meč"; break;
             case STONE_SWORD: nazov = "Kamenný meč"; break;
             case IRON_SWORD: nazov = "Železný meč"; break;
             case GOLD_SWORD: nazov = "Zlatý meč"; break;

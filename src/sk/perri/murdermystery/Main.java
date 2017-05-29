@@ -191,6 +191,15 @@ public class Main extends JavaPlugin implements Listener
         if(hra.getState() != GameState.End)
             hra.removePlayer(event.getPlayer());
 
+        getServer().getScheduler().runTaskLater(this, () ->
+                {
+                    if (hra.getState() == GameState.Lobby || hra.getState() == GameState.Starting)
+                    {
+                        hra.getAlive().forEach(c -> c.getSBManager().updateLobbyBoard());
+                        hra.getSpect().forEach(c -> c.getSBManager().updateLobbyBoard());
+                    }
+                }, 2L);
+
         event.setQuitMessage("");
 
         if(hra.getState() == GameState.Ingame)
@@ -206,8 +215,7 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onPickupItem(PlayerPickupItemEvent event)
     {
-        if(hra.getState() == GameState.End || hra.findClovek(event.getPlayer()).getType() == PlayerType.Spectator
-                || hra.findClovek(event.getPlayer()).getType() == PlayerType.None)
+        if(hra.getState() == GameState.End || !hra.getAlive().contains(hra.findClovek(event.getPlayer())))
         {
             event.setCancelled(true);
             return;
@@ -224,7 +232,10 @@ public class Main extends JavaPlugin implements Listener
                 pocet += event.getPlayer().getInventory().getItem(8).getAmount();
 
             if(c.getType() == PlayerType.Innocent)
+            {
                 c.addScore(ScoreTable.ITEM_PICK);
+                c.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.ITEM_PICK+" za sebraný gold!");
+            }
 
             if((c.getType() == PlayerType.Innocent || c.getType() == PlayerType.Killer) && pocet >= 10)
             {
@@ -271,6 +282,7 @@ public class Main extends JavaPlugin implements Listener
                 event.setCancelled(true);
                 hra.setDetective(event.getPlayer());
                 hra.findClovek(event.getPlayer()).addScore(ScoreTable.WEAP_PICK);
+                event.getPlayer().sendMessage(ChatColor.GOLD+""+ScoreTable.WEAP_PICK+" za zabití občana!");
                 return;
             }
         }
@@ -415,12 +427,14 @@ public class Main extends JavaPlugin implements Listener
             event.setCancelled(true);
 
             BungeeAPI.sendToLobby(event.getPlayer());
+            return;
         }
 
         if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_POWDER)
         {
             getServer().getScheduler().runTaskLater(this, () ->
                     event.getPlayer().openInventory(InvBuilder.buildKosmeticInv(event.getPlayer())), 2L);
+            return;
         }
 
         if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.COMPASS &&
@@ -428,7 +442,11 @@ public class Main extends JavaPlugin implements Listener
                 hra.findClovek(event.getPlayer()).getType() == PlayerType.None))
         {
             event.getPlayer().openInventory(InvBuilder.buildCompassInv());
+            return;
         }
+
+        if(!hra.getAlive().contains(hra.findClovek(event.getPlayer())))
+            event.setCancelled(true);
     }
 
     @EventHandler
