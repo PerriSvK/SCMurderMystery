@@ -13,11 +13,15 @@ public class Murder implements CommandExecutor
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(args.length == 0)
-            return false;
-
-        if(sender instanceof Player && !sender.isOp())
+        if((sender instanceof Player && !sender.isOp()) || args.length == 0)
+        {
+            sender.sendMessage(new String[]{
+                    ChatColor.GRAY+"-------------------------",
+                    ChatColor.DARK_RED+""+ChatColor.BOLD+"Murder "+ChatColor.WHITE+""+ChatColor.BOLD+"Mystery"+
+                            ChatColor.GRAY+" by "+ChatColor.DARK_GREEN+""+ChatColor.BOLD+"Perri",
+                    ChatColor.GRAY+"-------------------------"});
             return true;
+        }
 
         if(Main.get().getServer().getOnlinePlayers().size() < 2)
         {

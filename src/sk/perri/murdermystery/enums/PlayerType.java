@@ -2,5 +2,5 @@ package sk.perri.murdermystery.enums;
 
 public enum PlayerType
 {
-    Detective, Innocent, Killer, Spectator, None
+    Detective, Innocent, Killer, None
 }

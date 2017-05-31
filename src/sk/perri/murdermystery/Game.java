@@ -20,6 +20,8 @@ import sk.perri.murdermystery.enums.GameState;
 import sk.perri.murdermystery.enums.PlayerType;
 import sk.perri.murdermystery.utils.CenterMessage;
 
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 
 import static sk.perri.murdermystery.enums.GameOverReason.*;
@@ -42,14 +44,15 @@ public class Game
     private GameState state;
     private DetectiveStatus detectiveStatus = DetectiveStatus.Null;
     private String deName = "";
-    private Vector<String> inno = new Vector<>();
+    private int kkills = 0;
 
     Game()
     {
         state = GameState.Lobby;
     }
 
-    void addPlayer(Player player) {
+    Clovek addPlayer(Player player)
+    {
         Clovek c = new Clovek(player, new SBManager(player));
 
         alive.forEach(cl -> cl.getSBManager().registerPlayer(player));
@@ -62,11 +65,12 @@ public class Game
             player.setFlying(false);
             player.setAllowFlight(false);
             c.setType(PlayerType.None);
+            c.setAlive(true);
         }
         else
         {
             spect.add(c);
-            c.setType(PlayerType.Spectator);
+            c.setType(PlayerType.None);
             player.setGameMode(GameMode.ADVENTURE);
             player.setAllowFlight(true);
             player.setFlying(true);
@@ -75,12 +79,25 @@ public class Game
             spect.forEach(sp -> player.hidePlayer(sp.getPlayer()));
             giveSpectItems(player);
         }
+
+        return c;
     }
 
     void removePlayer(Player player)
     {
-        if (detective != null && detective.getPlayer().getUniqueId().equals(player.getUniqueId()))
-            killPlayer(detective, false);
+        Clovek os = findClovek(player);
+        if(os == null)
+            return;
+
+        if(os.isAlive() && alive.contains(findClovek(player)) && state == GameState.Ingame)
+        {
+            killPlayer(os, false);
+        }
+
+        os.setOnline(false);
+
+        /*if (detective != null && detective.getPlayer().getUniqueId().equals(player.getUniqueId()))
+            killPlayer(detective, false);*/
 
         for (Clovek c : alive) {
             c.getSBManager().deleteTeam(player);
@@ -99,8 +116,8 @@ public class Game
         Clovek vrah = findClovek(kille);
         Clovek obet = findClovek(victim);
 
-        if (vrah.getType() == PlayerType.Spectator || vrah.getType() == PlayerType.None ||
-                obet.getType() == PlayerType.None || obet.getType() == PlayerType.Spectator)
+        if (!vrah.isAlive() || vrah.getType() == PlayerType.None ||
+                obet.getType() == PlayerType.None || !obet.isAlive())
             return;
 
         if (!(vrah.getType() == PlayerType.Killer || obet.getType() == PlayerType.Killer))
@@ -122,6 +139,8 @@ public class Game
                 vrah.addScore(ScoreTable.M_KILL_I);
                 vrah.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.M_KILL_I+" za zabití občana!");
             }
+
+            kkills++;
         }
 
         if (obet.getType() == PlayerType.Killer)
@@ -150,7 +169,7 @@ public class Game
             resetBow(voi);
         }
 
-        clovek.setType(PlayerType.Spectator);
+        clovek.setAlive(false);
 
         //clovek.getPlayer().setGameMode(GameMode.SPECTATOR);
 
@@ -273,8 +292,15 @@ public class Game
         // Role role
         roleRole();
         giveWeapons();
-        alive.forEach(c -> c.getSBManager().createGameBoard(c.getType()));
+        alive.forEach(c ->
+            {
+                c.getSBManager().createGameBoard(c.getType());
+                // INV
+                c.getPlayer().getInventory().clear();
+                c.getPlayer().getInventory().setHeldItemSlot(0);
+            });
         Main.get().removeItems();
+        Main.get().stopPercTimer();
 
         // main game loop
         task = Bukkit.getScheduler().runTaskTimer(Main.get(), () ->
@@ -324,22 +350,63 @@ public class Game
         task = null;
     }
 
+    // Percentage
+    void calculatePercentage()
+    {
+        final float[] sucet = {0, 0};
+        alive.forEach(c ->
+        {
+            sucet[0] += c.getLkil();
+            sucet[1] += c.getLdec();
+        });
+
+        alive.forEach(c ->
+        {
+            c.setPerk((float) (c.getLkil() / sucet[0])*100);
+            c.setPerd((float) (c.getLdec() / sucet[1])*100);
+        });
+    }
+
     // functions
     private void roleRole()
     {
+        // Create list
+        List<Clovek> kilList = new ArrayList<>();
+        List<Clovek> decList = new ArrayList<>();
+
+        alive.forEach(c ->
+        {
+            for(int i = 0; i < c.getPerk(); i++)
+            {
+                kilList.add(c);
+            }
+
+            for(int i = 0; i < c.getPerd(); i++)
+            {
+                decList.add(c);
+            }
+        });
+
+        // Random element from list - Killer
         Random r = new Random();
-        killer = alive.get(r.nextInt(alive.size()));
+        int k = r.nextInt(kilList.size());
+        killer = kilList.get(k);
+        Main.get().getLogger().info("Killer - POS: "+k+" NAME: "+killer.getPlayer().getDisplayName());
         killer.setType(PlayerType.Killer);
         TitleAPI.sendTitle(killer.getPlayer(),Lang.MURDERER_INFO_1, 20, 60, 20);
         TitleAPI.sendSubTitle(killer.getPlayer(),Lang.MURDERER_INFO_2, 20, 60, 20);
         killer.getPlayer().sendMessage(Lang.MURDERER_INFO_1 + " " + Lang.MURDERER_INFO_2 +
                 " Meč hodíš podržením pravého tlačítka myši!");
 
-        detective = alive.get(r.nextInt(alive.size()));
-        while (killer.getType() == detective.getType()) {
-            detective = alive.get(r.nextInt(alive.size()));
+        // Random element from list - Detective
+        int d = r.nextInt(decList.size());
+        detective = decList.get(d);
+        while (killer.getType() == detective.getType())
+        {
+            d = r.nextInt(decList.size());
+            detective = decList.get(d);
         }
-
+        Main.get().getLogger().info("Detective - POS: "+d+" NAME: "+detective.getPlayer().getDisplayName());
         detective.setType(PlayerType.Detective);
         TitleAPI.sendTitle(detective.getPlayer(),Lang.DETECTIVE_INFO_1, 20, 60, 20);
         TitleAPI.sendSubTitle(detective.getPlayer(),Lang.DETECTIVE_INFO_2, 20, 60, 20);
@@ -349,14 +416,53 @@ public class Game
         civilians.add(detective.getPlayer());
         deName = detective.getPlayer().getDisplayName();
 
-        for (Clovek c : alive) {
-            if (c != killer && c != detective) {
+        for (Clovek c : alive)
+        {
+            if (c != killer && c != detective)
+            {
                 TitleAPI.sendTitle(c.getPlayer(),Lang.INOCENT_INFO_1, 20, 60, 20);
                 TitleAPI.sendSubTitle(c.getPlayer(),Lang.INOCENT_INFO_2, 20, 60, 20);
                 c.getPlayer().sendMessage(Lang.INOCENT_INFO_1 + " " + Lang.INOCENT_INFO_2
                         + " Seber 10 goldů získej luk a zabij vraha!");
                 civilians.add(c.getPlayer());
             }
+        }
+
+        // DB INSERT - UPDATE
+        try
+        {
+            Statement st = Main.get().getConn().createStatement();
+            for(Clovek cl : alive)
+            {
+                String sql;
+                int lk = cl.getLkil() < 1 ? 0 : (int) Math.round(cl.getLkil());
+                int ld = cl.getLdec() < 1 ? 0 : (int) Math.round(cl.getLdec());
+
+                if(cl.getPlayer().getDisplayName().equalsIgnoreCase(killer.getPlayer().getDisplayName()))
+                {
+                    sql = "UPDATE murder SET lkil = 0, ldet = "+(ld+1)+" WHERE name = '"+killer.getPlayer().getDisplayName()+"';";
+                }
+                else if(cl.getPlayer().getDisplayName().equalsIgnoreCase(detective.getPlayer().getDisplayName()))
+                {
+                    sql = "UPDATE murder SET ldet = 0, lkil = "+(lk+1)+" WHERE name = '"+detective.getPlayer().getDisplayName()+"';";
+                }
+                else
+                {
+                    sql = "UPDATE murder SET ldet = "+(ld+1)+", lkil = "+(lk+1)+" WHERE name = '"+cl.getPlayer().getDisplayName()+"';";
+                }
+
+                st.execute(sql);
+            }
+
+            st.close();
+        }
+        catch (SQLException e)
+        {
+            Main.get().getLogger().warning("SQL Error - Game#roleRole - e: "+e.getMessage());
+        }
+        finally
+        {
+            Main.get().getDb().closeConnection();
         }
     }
 
@@ -511,9 +617,11 @@ public class Game
                 killer.getPlayer().sendMessage("§8[] §9§l+ 100 StylePoints");
                 ss.add("Vyhrává: "+ChatColor.RED+""+ChatColor.BOLD+"VRAH");
                 ss.add("");
-                ss.add(ChatColor.GRAY+"Vrah: "+killer.getPlayer().getDisplayName());
+                ss.add(ChatColor.GRAY+"Vrah: "+killer.getPlayer().getDisplayName()+" ("+kkills+")");
                 ss.add(ChatColor.GRAY+""+ChatColor.STRIKETHROUGH+"Detektív: "+deName);
                 break;
+            case TIME_OUT:
+
             default:
                 civilians.forEach(p ->
                 {
@@ -546,7 +654,7 @@ public class Game
                 TitleAPI.sendSubTitle(killer.getPlayer(),Lang.KILLER_LOOSE_REASON, 10, 80, 10);
                 ss.add(hero == null ? "Vyhrává: "+ChatColor.BLUE+""+ChatColor.BOLD+"DETEKTIV" : "Vyhrávají: "+ChatColor.GREEN+""+ChatColor.BOLD+"OBČANÉ");
                 ss.add("");
-                ss.add(ChatColor.GRAY+""+ChatColor.STRIKETHROUGH+"Vrah: "+killer.getPlayer().getDisplayName());
+                ss.add(ChatColor.GRAY+""+ChatColor.STRIKETHROUGH+"Vrah: "+killer.getPlayer().getDisplayName()+" ("+kkills+")");
                 ss.add(ChatColor.GRAY+""+(hero != null ? ChatColor.STRIKETHROUGH : "")+"Detektiv: "+deName);
                 if(hero != null)
                 {

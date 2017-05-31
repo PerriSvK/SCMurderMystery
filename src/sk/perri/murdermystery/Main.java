@@ -2,6 +2,8 @@ package sk.perri.murdermystery;
 
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
 import me.mirek.devtools.api.DevTools;
+import me.mirek.devtools.api.database.DBPool;
+import me.mirek.devtools.api.database.Database;
 import me.mirek.devtools.api.utils.BungeeAPI;
 import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
@@ -28,6 +30,10 @@ import sk.perri.murdermystery.enums.PlayerType;
 import sk.perri.murdermystery.enums.Traily;
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +46,10 @@ public class Main extends JavaPlugin implements Listener
     private ArmorStand bowStand = null;
     private BukkitTask swordTask = null;
     private BukkitTask moveTask = null;
+    private BukkitTask showTask = null;
     private Map<Projectile, Particle> sipi = new HashMap<>();
+    private Database db = DBPool.STATS;
+    private Connection conn;
 
     private static double SwordCooldown = 0.0;
 
@@ -62,14 +71,40 @@ public class Main extends JavaPlugin implements Listener
         getCommand("setup").setExecutor(new Setup());
         getCommand("murder").setExecutor(new Murder());
 
+        // DB
+        db.openConnection();
+        conn = db.getConnection();
+
         DevTools.registerChat();
 
         Bukkit.getPluginManager().registerEvents(new PingListener(),this);
         swordTimer();
+        showPercTimer();
     }
 
-    private void swordTimer(){
-        swordTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+    private void showPercTimer()
+    {
+        showTask = Bukkit.getScheduler().runTaskTimer(this, () ->
+        {
+            if(hra.getAlive().size() != 0)
+            {
+                hra.getAlive().forEach(cc -> ActionBarAPI.sendActionBar(cc.getPlayer(),
+                    ChatColor.RED+"      Vrah: "+Math.round(cc.getPerk())+"%      "+ChatColor.BLUE+"Detektiv: "+
+                    Math.round(cc.getPerd())+"%"));
+            }
+
+        }, 0, 10);
+    }
+
+    void stopPercTimer()
+    {
+        Bukkit.getScheduler().cancelTask(showTask.getTaskId());
+    }
+
+    private void swordTimer()
+    {
+        swordTask = Bukkit.getScheduler().runTaskTimer(this, () ->
+        {
             StringBuilder toDisplay = new StringBuilder("§f§lVrhnutí §f - §a");
             if(SwordCooldown > 0){
                 SwordCooldown-= 0.1;
@@ -90,6 +125,7 @@ public class Main extends JavaPlugin implements Listener
     @Override
     public void onDisable()
     {
+        db.closeConnection();
         getLogger().info("Plugin disabled!");
     }
 
@@ -109,7 +145,8 @@ public class Main extends JavaPlugin implements Listener
                         continue;
                     }
 
-                    if (localEntity.getType() == EntityType.ARMOR_STAND && localEntity.getCustomName() != null)
+                    if (localEntity.getType() == EntityType.ARMOR_STAND && (localEntity.getCustomName() != null &&
+                            (localEntity.getCustomName().contains("LUK") || localEntity.getCustomName().contains("SWORD"))))
                         localEntity.remove();
 
                     if (localEntity.getType() == EntityType.COW)
@@ -138,16 +175,56 @@ public class Main extends JavaPlugin implements Listener
         event.getPlayer().getInventory().setItem(8, btl);
 
         // DECORATION MENU IS
-        ItemStack dm = new ItemStack(Material.BLAZE_POWDER, 1);
-        ItemMeta dmim = dm.getItemMeta();
-        dmim.setDisplayName(ChatColor.DARK_PURPLE+""+ChatColor.BOLD+"KOSMETIK MENU");
-        dm.setItemMeta(dmim);
-        event.getPlayer().getInventory().setItem(4, dm);
+        if(hra.getState() == GameState.Lobby || hra.getState() == GameState.Starting)
+        {
+            ItemStack dm = new ItemStack(Material.BLAZE_POWDER, 1);
+            ItemMeta dmim = dm.getItemMeta();
+            dmim.setDisplayName(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "KOSMETIK MENU");
+            dm.setItemMeta(dmim);
+            event.getPlayer().getInventory().setItem(4, dm);
+        }
 
         // Hide players nickname in TAB
         //event.getPlayer().setPlayerListName(ChatColor.MAGIC+"------");
 
-        hra.addPlayer(event.getPlayer());
+        Clovek c = hra.addPlayer(event.getPlayer());
+
+        // DB
+        if(hra.getState() == GameState.Lobby || hra.getState() == GameState.Starting)
+        {
+            try
+            {
+                Statement st = conn.createStatement();
+                ResultSet rs = st.executeQuery(
+                        "SELECT * FROM murder WHERE name = '" + event.getPlayer().getDisplayName() + "';");
+                if (rs.next())
+                {
+                    c.setLdec(rs.getInt("ldet"));
+                    c.setLkil(rs.getInt("lkil"));
+                }
+                else
+                {
+                    // TODO INSERT INTO
+                    String sql = "INSERT INTO " +
+                            "murder(name, uuid, lkil, ldet)" +
+                            "VALUES('" + event.getPlayer().getDisplayName() + "', '" + event.getPlayer()
+                            .getUniqueId() + "', 0, 0);";
+
+                    st.execute(sql);
+                    getLogger().info("Player "+event.getPlayer().getDisplayName()+" has connected for first time, "+
+                    "creating row in DB!");
+                    c.setLdec(0);
+                    c.setLkil(0);
+                }
+
+                st.close();
+                hra.calculatePercentage();
+            }
+            catch (SQLException e)
+            {
+                getLogger().warning("SQLError - onJoin e:" + e.getMessage());
+            }
+        }
 
         if((hra.getState() != GameState.Lobby) && (hra.getState() != GameState.Starting))
             event.setJoinMessage("");
@@ -169,8 +246,9 @@ public class Main extends JavaPlugin implements Listener
         TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
 
         // BETA INFO
-        event.getPlayer().sendMessage(ChatColor.GOLD+"Ahoj, táto hra je ešte stále vo vývoji! Môže sa stať, že niečo"+
-        " nebude "+ChatColor.RED+"fungovať"+ChatColor.GOLD+" tak, ako by malo. Ak nájdeš chybu napíš prosím Perrimu. Ďakujem.");
+        event.getPlayer().sendMessage(new String[]{ChatColor.GOLD+"Ahoj, táto hra je ešte stále vo vývoji!",
+                ChatColor.GOLD+"Môže sa stať, že niečo nebude "+ChatColor.RED+"fungovať"+ChatColor.GOLD+" tak, ako by malo.",
+                ChatColor.GOLD+"Ak nájdeš chybu napíš prosím Perrimu. Ďakujem."});
     }
 
     @EventHandler
@@ -201,9 +279,6 @@ public class Main extends JavaPlugin implements Listener
                 }, 2L);
 
         event.setQuitMessage("");
-
-        if(hra.getState() == GameState.Ingame)
-            hra.winCheck();
     }
 
     @EventHandler
@@ -215,6 +290,9 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onPickupItem(PlayerPickupItemEvent event)
     {
+        if(hra.getState() == GameState.Setup)
+            return;
+
         if(hra.getState() == GameState.End || !hra.getAlive().contains(hra.findClovek(event.getPlayer())))
         {
             event.setCancelled(true);
@@ -276,6 +354,9 @@ public class Main extends JavaPlugin implements Listener
 
             if(hra.findClovek(event.getPlayer()).getType() == PlayerType.Innocent)
             {
+                if(event.getPlayer().getInventory().contains(Material.ARROW))
+                    event.getPlayer().getInventory().remove(Material.ARROW);
+
                 event.getPlayer().getInventory().setItem(1, new ItemStack(Material.BOW, 1));
                 event.getPlayer().getInventory().setItem(2, new ItemStack(Material.ARROW, 1));
                 event.getItem().remove();
@@ -293,6 +374,9 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onInvClick(InventoryClickEvent event)
     {
+        if(hra.getState() == GameState.Setup)
+            return;
+
         try
         {
             if (event.getClickedInventory().getTitle().contains("KOSMETIK") && event.getCurrentItem().getType() != Material.AIR)
@@ -375,7 +459,7 @@ public class Main extends JavaPlugin implements Listener
         if(event.getDamager() instanceof Arrow && ((Arrow) event.getDamager()).getShooter() instanceof Player &&
                 event.getEntity() instanceof Player && hra.getState() == GameState.Ingame && isValidWeapon(event.getDamager()))
         {
-            if(hra.findClovek((Player) event.getEntity()).getType() == PlayerType.Spectator)
+            if(!hra.findClovek((Player) event.getEntity()).isAlive())
             {
                 spawnNewArrow((Arrow) event.getDamager(), (Player) event.getEntity());
                 return;
@@ -396,6 +480,9 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onBreak(BlockBreakEvent event)
     {
+        if(hra.getState() == GameState.Setup)
+            return;
+
         if(!event.getPlayer().isOp())
             event.setCancelled(true);
     }
@@ -403,6 +490,9 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onPlace(BlockPlaceEvent event)
     {
+        if(hra.getState() == GameState.Setup)
+            return;
+
         if(!event.getPlayer().isOp())
             event.setCancelled(true);
     }
@@ -422,6 +512,9 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onItemClick(PlayerInteractEvent event)
     {
+        if(hra.getState() == GameState.Setup)
+            return;
+
         if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BED)
         {
             event.setCancelled(true);
@@ -438,7 +531,7 @@ public class Main extends JavaPlugin implements Listener
         }
 
         if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.COMPASS &&
-                (hra.findClovek(event.getPlayer()).getType() == PlayerType.Spectator ||
+                (!hra.findClovek(event.getPlayer()).isAlive() ||
                 hra.findClovek(event.getPlayer()).getType() == PlayerType.None))
         {
             event.getPlayer().openInventory(InvBuilder.buildCompassInv());
@@ -489,93 +582,6 @@ public class Main extends JavaPlugin implements Listener
                 }
             }, 5L, 5L);*/
         }
-
-        /*if (event.getAction().name().toLowerCase().contains("right"))
-        {
-            if (localPlayer.getInventory().getItemInMainHand().getType() == Material.AIR)
-            {
-                return;
-            }
-            if (localPlayer.getInventory().getItemInMainHand().getType() == Material.IRON_SWORD)
-            {
-                event.setCancelled(true);
-                if (hra.findClovek(localPlayer).getType() == PlayerType.Killer)
-                {
-                    final ArmorStand localArmorStand = event.getPlayer().getWorld().spawn(
-                            event.getPlayer().getLocation(), ArmorStand.class);
-
-                    localArmorStand.setArms(true);
-                    localArmorStand.setBasePlate(false);
-                    localArmorStand.setVisible(false);
-                    localArmorStand.setGravity(false);
-                    localArmorStand.setCustomName("sword");
-                    localArmorStand.setCustomNameVisible(false);
-
-                    localArmorStand.setRightArmPose(new EulerAngle(Math.toRadians(0.0D),
-                            Math.toRadians(-localPlayer.getLocation().getPitch()), Math.toRadians(90.0D)));
-                    localArmorStand.setItemInHand(event.getPlayer().getInventory().getItemInMainHand().clone());
-
-                    Location localLocation = localPlayer.getLocation().clone();
-
-                    final double d1 = localLocation.getX();
-                    final double d2 = localLocation.getY();
-                    final double d3 = localLocation.getZ();
-                    double d4 = Math.toRadians(localLocation.getYaw() + 90.0F);
-                    double d5 = Math.toRadians(localLocation.getPitch() + 90.0F);
-                    double d6 = Math.sin(d5) * Math.cos(d4);
-                    double d7 = Math.sin(d5) * Math.sin(d4);
-                    double d8 = Math.cos(d5);
-
-                    //this.Yaw.put(localPlayer, Float.valueOf(localPlayer.getEyeLocation().getYaw()));
-                    //this.Pitch.put(localPlayer, Float.valueOf(localPlayer.getEyeLocation().getPitch()));
-
-                    Material[] arrayOfMaterial1 = { Material.AIR, Material.WATER, Material.STATIONARY_WATER,
-                            Material.WALL_BANNER, Material.WALL_SIGN, Material.CARPET, Material.CARROT_ITEM,
-                            Material.CROPS, Material.DEAD_BUSH, Material.DIODE, Material.DIODE_BLOCK_OFF,
-                            Material.DIODE_BLOCK_ON, Material.REDSTONE_TORCH_OFF, Material.REDSTONE_TORCH_OFF,
-                            Material.TORCH, Material.DOUBLE_PLANT, Material.LONG_GRASS };
-
-                    ArrayList localArrayList = new ArrayList();
-                    Material[] arrayOfMaterial2;
-                    int i = (arrayOfMaterial2 = arrayOfMaterial1).length;
-                    for (int j = 0; j < i; j++)
-                    {
-                        Material localMaterial = arrayOfMaterial2[j];
-                        localArrayList.add(localMaterial);
-                    }
-
-                    final double[] a = {0};
-
-                    getServer().getScheduler().runTaskTimer(this, () ->
-                    {
-                        Location newLocalLocation = new Location(localPlayer.getWorld(), d1 + a[0] * d6,
-                                d2 + a[0] * d8, d3 + a[0] * d7);
-
-                        newLocalLocation.setYaw((float) Math.toDegrees(d4)-90.0f);
-                        newLocalLocation.setPitch((float) Math.toDegrees(d5)-90.0f);
-
-                        Block localBlock = localPlayer.getEyeLocation().getBlock();
-                        localArmorStand.teleport(newLocalLocation);
-
-
-                        List<Entity> entities = new ArrayList<Entity>();
-                        entities.addAll(localArmorStand.getNearbyEntities(2, 2, 2));
-                        for (int j = 0; j < entities.size(); j++)
-                        {
-                            Entity localArena = entities.get(j);
-                            if (((localArena instanceof LivingEntity)) &&
-                                    (!(localArena instanceof ArmorStand)) &&
-                                    ((localArena instanceof Player)))
-                            {
-                                hra.killPlayer(localPlayer, (Player)localArena);
-
-                            }
-                        }
-                        a[0] += 0.2;
-                    }, 2L, 2L);
-                }
-            }
-        }*/
     }
 
     @EventHandler
@@ -625,7 +631,7 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event)
     {
-        if(hra.findClovek(event.getPlayer()).getType() == PlayerType.Spectator)
+        if(!hra.findClovek(event.getPlayer()).isAlive())
         {
             hra.getAlive().forEach(c -> event.getRecipients().remove(c.getPlayer()));
             String s = event.getMessage();
@@ -675,7 +681,10 @@ public class Main extends JavaPlugin implements Listener
     private void loadLocations()
     {
         if(!getConfig().isSet("lobby.x"))
+        {
+            hra.setState(GameState.Setup);
             return;
+        }
 
         lobbyLocation = new Location(getServer().getWorld(getConfig().getString("lobby.world")),
                 getConfig().getDouble("lobby.x"), getConfig().getDouble("lobby.y"),
@@ -759,7 +768,6 @@ public class Main extends JavaPlugin implements Listener
         getServer().getScheduler().runTaskLater(this, () -> entity.setGameMode(GameMode.ADVENTURE), 3L);
     }
 
-    // TODO DEBUG
     // SWORD THROWING
     private void createSword(Player player)
     {
@@ -875,6 +883,15 @@ public class Main extends JavaPlugin implements Listener
     ArmorStand getBowStand() { return bowStand; }
     void setBowStand(ArmorStand ne) { bowStand = ne; }
     Map<Projectile, Particle> getSipi() { return sipi; }
+
+    public Connection getConn()
+    {
+        return conn;
+    }
+    public Database getDb()
+    {
+        return db;
+    }
 }
 
 /*
