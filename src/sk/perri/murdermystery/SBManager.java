@@ -103,6 +103,9 @@ class SBManager
         mc.stylecraft.cz    1
          */
 
+        if(board.getTeam("d") != null)
+            return;
+
         if(board.getObjective("main") != null)
             board.getObjective("main").unregister();
 
@@ -152,6 +155,9 @@ class SBManager
 
     void updateGameBoard(int score)
     {
+        if(board.getTeam("d") == null)
+            return;
+
         //cas
         board.getTeam("d").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
         //obcani
@@ -186,6 +192,9 @@ class SBManager
         mc.stylecraft.cz    1
          */
 
+        if(board.getTeam("h") != null)
+            return;
+
         if(board.getObjective("main") != null)
             board.getObjective("main").unregister();
 
@@ -214,6 +223,9 @@ class SBManager
 
     void updateSpectBoard()
     {
+        if(board.getTeam("h") == null)
+            return;
+
         //cas
         board.getTeam("h").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
         //obcani
@@ -233,7 +245,8 @@ class SBManager
 
     void deleteTeam(Player player)
     {
-        board.getTeam(player.getDisplayName()).unregister();
+        if(board.getTeam(player.getDisplayName()) != null)
+            board.getTeam(player.getDisplayName()).unregister();
     }
 
     Scoreboard getBoard()

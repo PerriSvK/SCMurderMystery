@@ -34,7 +34,6 @@ public class Game
     private Vector<Location> spawn = new Vector<>();
     private Vector<Location> itemsLocation = new Vector<>();
     private Location bowLocation = null;
-    private int ticks = 6000;
     private int time = 300;
     private Clovek killer = null;
     private Clovek detective = null;
@@ -91,7 +90,9 @@ public class Game
 
         if(os.isAlive() && alive.contains(findClovek(player)) && state == GameState.Ingame)
         {
+            os.addScore(ScoreTable.ALIVE_DISC);
             killPlayer(os, false);
+            updateScoreInDB(os);
         }
 
         os.setOnline(false);
@@ -99,11 +100,13 @@ public class Game
         /*if (detective != null && detective.getPlayer().getUniqueId().equals(player.getUniqueId()))
             killPlayer(detective, false);*/
 
-        for (Clovek c : alive) {
+        for (Clovek c : alive)
+        {
             c.getSBManager().deleteTeam(player);
         }
 
-        for (Clovek c : spect) {
+        for (Clovek c : spect)
+        {
             c.getSBManager().deleteTeam(player);
         }
 
@@ -194,6 +197,9 @@ public class Game
         //FLY
         clovek.getPlayer().setAllowFlight(true);
         clovek.getPlayer().setFlying(true);
+
+        //DB
+        updateScoreInDB(clovek);
     }
 
     // Positions
@@ -218,8 +224,8 @@ public class Game
         // start countdown
         if (countdown > 0)
         {
-            if (force && countdown > 6)
-                countdown = 5;
+            if (force && countdown > 16)
+                countdown = 15;
 
             return;
         }
@@ -437,18 +443,19 @@ public class Game
                 String sql;
                 int lk = cl.getLkil() < 1 ? 0 : (int) Math.round(cl.getLkil());
                 int ld = cl.getLdec() < 1 ? 0 : (int) Math.round(cl.getLdec());
+                String ggg = "games = "+(cl.getGames()+1);
 
                 if(cl.getPlayer().getDisplayName().equalsIgnoreCase(killer.getPlayer().getDisplayName()))
                 {
-                    sql = "UPDATE murder SET lkil = 0, ldet = "+(ld+1)+" WHERE name = '"+killer.getPlayer().getDisplayName()+"';";
+                    sql = "UPDATE murder SET lkil = 0, ldet = "+(ld+1)+", "+ggg+" WHERE name = '"+killer.getPlayer().getDisplayName()+"';";
                 }
                 else if(cl.getPlayer().getDisplayName().equalsIgnoreCase(detective.getPlayer().getDisplayName()))
                 {
-                    sql = "UPDATE murder SET ldet = 0, lkil = "+(lk+1)+" WHERE name = '"+detective.getPlayer().getDisplayName()+"';";
+                    sql = "UPDATE murder SET ldet = 0, lkil = "+(lk+1)+", "+ggg+" WHERE name = '"+detective.getPlayer().getDisplayName()+"';";
                 }
                 else
                 {
-                    sql = "UPDATE murder SET ldet = "+(ld+1)+", lkil = "+(lk+1)+" WHERE name = '"+cl.getPlayer().getDisplayName()+"';";
+                    sql = "UPDATE murder SET ldet = "+(ld+1)+", lkil = "+(lk+1)+", "+ggg+" WHERE name = '"+cl.getPlayer().getDisplayName()+"';";
                 }
 
                 st.execute(sql);
@@ -459,10 +466,6 @@ public class Game
         catch (SQLException e)
         {
             Main.get().getLogger().warning("SQL Error - Game#roleRole - e: "+e.getMessage());
-        }
-        finally
-        {
-            Main.get().getDb().closeConnection();
         }
     }
 
@@ -501,7 +504,7 @@ public class Game
         //Setting bow text stand
         if(bowLocation != null)
         {
-            Location bsl = new Location(bowLocation.getWorld(), bowLocation.getX(), bowLocation.getY()+1, bowLocation.getZ());
+            // Location bsl = new Location(bowLocation.getWorld(), bowLocation.getX(), bowLocation.getY()+1, bowLocation.getZ());
             ArmorStand bs = bowLocation.getWorld().spawn(bowLocation, ArmorStand.class);
             bs.setVisible(false);
             bs.setCustomName(ChatColor.BLUE+""+ChatColor.BOLD+"LUK");
@@ -544,7 +547,7 @@ public class Game
                 new ItemStack(Material.GOLD_INGOT, 1));
     }
 
-    void winCheck()
+    private void winCheck()
     {
         boolean go = false;
         GameOverReason reason = NULL;
@@ -592,9 +595,12 @@ public class Game
     private void gameOver(GameOverReason reason)
     {
         Bukkit.getScheduler().cancelAllTasks();
+
+        if(Main.get().getSwordStand() != null)
+            Main.get().getSwordStand().remove();
+
         Vector<String> ss = new Vector<>();
         ChatColor cc = ChatColor.RED;
-        int winner = 0; //0 - Murder; 1 - DET; 2 - HERO
 
         if (killer == null)
             return;
@@ -623,14 +629,23 @@ public class Game
             case TIME_OUT:
 
             default:
+                alive.forEach(c ->
+                {
+                    if(killer != c)
+                    {
+                        c.addScore(ScoreTable.END_ALIVE);
+                        c.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.END_ALIVE+" za přežití!");
+                    }
+                });
+
                 civilians.forEach(p ->
                 {
                     if ((hero != null && p.getDisplayName().equalsIgnoreCase(hero.getPlayer().getDisplayName()))
                             || (detectiveStatus == DetectiveStatus.Alive &&
                         p.getDisplayName().equalsIgnoreCase(detective.getPlayer().getDisplayName())))
                     {
-                        PointsAPI.addPoints(p, 50);
-                        LuckyShardsAPI.addLuckyShards(p, 5);
+                        PointsAPI.addPoints(p, 100);
+                        LuckyShardsAPI.addLuckyShards(p, 10);
                         p.sendMessage("§8[] §e§l+ 10 LuckyShards");
                         p.sendMessage("§8[] §9§l+ 100 StylePoints");
                         TitleAPI.sendTitle(p, Lang.WIN_MORE, 10, 80, 10);
@@ -638,8 +653,8 @@ public class Game
                     }
                     else
                     {
-                        PointsAPI.addPoints(p, 100);
-                        LuckyShardsAPI.addLuckyShards(p, 10);
+                        PointsAPI.addPoints(p, 50);
+                        LuckyShardsAPI.addLuckyShards(p, 5);
                         p.sendMessage("§8[] §e§l+5 LuckyShards");
                         p.sendMessage("§8[] §9§l+50 StylePoints");
                     }
@@ -678,6 +693,9 @@ public class Game
         }
 
         Main.get().getServer().broadcastMessage(Lang.SERVER_RESTART);
+
+        Bukkit.getScheduler().runTaskLater(Main.get(), () -> alive.forEach(this::updateScoreInDB), 10L);
+
         Bukkit.getScheduler().runTaskLater(Main.get(), () ->
                 Main.get().getServer().getOnlinePlayers().forEach(BungeeAPI::sendToLobby), 400);
         Bukkit.getScheduler().runTaskLater(Main.get(), () -> Main.get().getServer().shutdown(), 550);
@@ -701,7 +719,7 @@ public class Game
     }
 
     // Set + Get
-    public void setState(GameState state)
+    void setState(GameState state)
     {
         this.state = state;
     }
@@ -748,9 +766,9 @@ public class Game
         return detectiveStatus;
     }
 
-    void setDetectiveStatus(DetectiveStatus newStatus) {
+    /*void setDetectiveStatus(DetectiveStatus newStatus) {
         detectiveStatus = newStatus;
-    }
+    }*/
 
     // utils
     Clovek findClovek(Player player) {
@@ -764,5 +782,20 @@ public class Game
         }
 
         return null;
+    }
+
+    private void updateScoreInDB(Clovek c)
+    {
+        try
+        {
+            Statement st = Main.get().getConn().createStatement();
+            String sql = "UPDATE murder SET karma = "+c.getScore()+" WHERE name = '"+c.getPlayer().getDisplayName()+"';";
+            st.execute(sql);
+            st.close();
+        }
+        catch (SQLException e)
+        {
+            Main.get().getLogger().warning("SQL Error - Game#updateScore - e: "+e.getMessage());
+        }
     }
 }

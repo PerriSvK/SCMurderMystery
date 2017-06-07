@@ -10,23 +10,22 @@ public class Clovek
     private Player player;
     private PlayerType type;
     private SBManager board;
-    private int score;
+    private int score = 0;
     private Material sword = Material.IRON_SWORD;
     private Particle trail = null;
     private int ldec = 0;
     private int lkil = 0;
     private float perd = 0;
     private float perk = 0;
+    private int games = 0;
     private boolean alive = false;
     private boolean online = true;
-    private int ingCol = 0;
-    private int bowRea = 0;
+    private boolean gg = false;
 
     public Clovek(Player player, SBManager board)
     {
         this.player = player;
         this.board = board;
-        score = 0;
     }
 
     public void setType(PlayerType type)
@@ -52,6 +51,11 @@ public class Clovek
     public void addScore(int score)
     {
         this.score += score;
+    }
+
+    public void setScore(int score)
+    {
+        this.score = score;
     }
 
     public int getScore()
@@ -119,6 +123,16 @@ public class Clovek
         this.lkil = lkil;
     }
 
+    public int getGames()
+    {
+        return games;
+    }
+
+    public void setGames(int games)
+    {
+        this.games = games;
+    }
+
     public void setAlive(boolean alive)
     {
         this.alive = alive;
@@ -139,15 +153,13 @@ public class Clovek
         return online;
     }
 
-    public void addIngColl()
+    public boolean getGG()
     {
-        ingCol++;
+        return gg;
     }
 
-    public int getIngColl()
+    public void gg()
     {
-        return ingCol;
+        gg = true;
     }
-
-    public void addBowRead() { bowRea++; }
 }

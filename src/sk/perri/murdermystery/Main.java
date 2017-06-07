@@ -2,6 +2,7 @@ package sk.perri.murdermystery;
 
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
 import me.mirek.devtools.api.DevTools;
+import me.mirek.devtools.api.currencies.PointsAPI;
 import me.mirek.devtools.api.database.DBPool;
 import me.mirek.devtools.api.database.Database;
 import me.mirek.devtools.api.utils.BungeeAPI;
@@ -10,6 +11,7 @@ import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
@@ -146,10 +148,13 @@ public class Main extends JavaPlugin implements Listener
                     }
 
                     if (localEntity.getType() == EntityType.ARMOR_STAND && (localEntity.getCustomName() != null &&
-                            (localEntity.getCustomName().contains("LUK") || localEntity.getCustomName().contains("SWORD"))))
+                        (localEntity.getCustomName().contains("LUK") || localEntity.getCustomName().contains("sword"))))
                         localEntity.remove();
 
                     if (localEntity.getType() == EntityType.COW)
+                        localEntity.remove();
+
+                    if(localEntity.getType() == EntityType.ARROW)
                         localEntity.remove();
                 }
             }
@@ -201,14 +206,15 @@ public class Main extends JavaPlugin implements Listener
                 {
                     c.setLdec(rs.getInt("ldet"));
                     c.setLkil(rs.getInt("lkil"));
+                    c.setScore(rs.getInt("karma"));
+                    c.setGames(rs.getInt("games"));
                 }
                 else
                 {
-                    // TODO INSERT INTO
                     String sql = "INSERT INTO " +
-                            "murder(name, uuid, lkil, ldet)" +
+                            "murder(name, uuid, lkil, ldet, karma, games)" +
                             "VALUES('" + event.getPlayer().getDisplayName() + "', '" + event.getPlayer()
-                            .getUniqueId() + "', 0, 0);";
+                            .getUniqueId() + "', 0, 0, 0, 0);";
 
                     st.execute(sql);
                     getLogger().info("Player "+event.getPlayer().getDisplayName()+" has connected for first time, "+
@@ -363,7 +369,7 @@ public class Main extends JavaPlugin implements Listener
                 event.setCancelled(true);
                 hra.setDetective(event.getPlayer());
                 hra.findClovek(event.getPlayer()).addScore(ScoreTable.WEAP_PICK);
-                event.getPlayer().sendMessage(ChatColor.GOLD+""+ScoreTable.WEAP_PICK+" za zabití občana!");
+                event.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.WEAP_PICK+" za sebraný luk!");
                 return;
             }
         }
@@ -442,7 +448,14 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onDeath(PlayerDeathEvent event)
     {
-        hra.killPlayer(hra.findClovek(event.getEntity()), true);
+        if(hra.findClovek(event.getEntity()).isAlive())
+        {
+            hra.killPlayer(hra.findClovek(event.getEntity()), true);
+        }
+        else
+        {
+            event.setKeepInventory(true);
+        }
     }
 
     @EventHandler
@@ -509,13 +522,20 @@ public class Main extends JavaPlugin implements Listener
         event.setCancelled(true);
     }
 
+    // funkcia na spravny klik
+    private boolean isClick(Action action)
+    {
+        return action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK ||
+                action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK;
+    }
+
     @EventHandler
     public void onItemClick(PlayerInteractEvent event)
     {
         if(hra.getState() == GameState.Setup)
             return;
 
-        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BED)
+        if(isClick(event.getAction()) && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BED)
         {
             event.setCancelled(true);
 
@@ -523,19 +543,25 @@ public class Main extends JavaPlugin implements Listener
             return;
         }
 
-        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_POWDER)
+        if(isClick(event.getAction()) && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_POWDER)
         {
             getServer().getScheduler().runTaskLater(this, () ->
                     event.getPlayer().openInventory(InvBuilder.buildKosmeticInv(event.getPlayer())), 2L);
             return;
         }
 
-        if(event.getPlayer().getInventory().getItemInMainHand().getType() == Material.COMPASS &&
+        if(isClick(event.getAction()) && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.COMPASS &&
                 (!hra.findClovek(event.getPlayer()).isAlive() ||
                 hra.findClovek(event.getPlayer()).getType() == PlayerType.None))
         {
             event.getPlayer().openInventory(InvBuilder.buildCompassInv());
             return;
+        }
+
+        if(event.getAction() == Action.PHYSICAL && event.getClickedBlock().getType() == Material.SOIL)
+        {
+            event.setCancelled(true);
+            event.getClickedBlock().setType(Material.SOIL);
         }
 
         if(!hra.getAlive().contains(hra.findClovek(event.getPlayer())))
@@ -631,12 +657,20 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event)
     {
-        if(!hra.findClovek(event.getPlayer()).isAlive())
+        if(!hra.findClovek(event.getPlayer()).isAlive() && hra.getState() != GameState.End)
         {
             hra.getAlive().forEach(c -> event.getRecipients().remove(c.getPlayer()));
             String s = event.getMessage();
             event.setMessage(ChatColor.GRAY+s);
         }
+
+        if(event.getMessage().equalsIgnoreCase("gg") && hra.getState() == GameState.End &&
+                hra.findClovek(event.getPlayer()) != null && !hra.findClovek(event.getPlayer()).getGG())
+        {
+            hra.findClovek(event.getPlayer()).gg();
+            PointsAPI.addPoints(event.getPlayer(), 20);
+        }
+
     }
 
     // funkcie
@@ -881,19 +915,16 @@ public class Main extends JavaPlugin implements Listener
         return hra;
     }
     ArmorStand getBowStand() { return bowStand; }
+    ArmorStand getSwordStand() { return swordStand; }
     void setBowStand(ArmorStand ne) { bowStand = ne; }
     Map<Projectile, Particle> getSipi() { return sipi; }
 
-    public Connection getConn()
+    Connection getConn()
     {
         return conn;
     }
-    public Database getDb()
+    Database getDb()
     {
         return db;
     }
 }
-
-/*
-TODO Percentage, DB
- */
