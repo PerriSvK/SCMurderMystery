@@ -444,18 +444,26 @@ public class Game
                 int lk = cl.getLkil() < 1 ? 0 : (int) Math.round(cl.getLkil());
                 int ld = cl.getLdec() < 1 ? 0 : (int) Math.round(cl.getLdec());
                 String ggg = "games = "+(cl.getGames()+1);
+                String swo = "sword = '"+cl.getSword().toString()+"'";
+
+                String t = "NULL";
+                if(cl.getTrail() != null)
+                    t = cl.getTrail().toString();
+
+                String tra = "trail = '"+t+"'";
+                String pri = ggg+", "+swo+", "+tra;
 
                 if(cl.getPlayer().getDisplayName().equalsIgnoreCase(killer.getPlayer().getDisplayName()))
                 {
-                    sql = "UPDATE murder SET lkil = 0, ldet = "+(ld+1)+", "+ggg+" WHERE name = '"+killer.getPlayer().getDisplayName()+"';";
+                    sql = "UPDATE murder SET lkil = 0, ldet = "+(ld+1)+", "+pri+" WHERE name = '"+killer.getPlayer().getDisplayName()+"';";
                 }
                 else if(cl.getPlayer().getDisplayName().equalsIgnoreCase(detective.getPlayer().getDisplayName()))
                 {
-                    sql = "UPDATE murder SET ldet = 0, lkil = "+(lk+1)+", "+ggg+" WHERE name = '"+detective.getPlayer().getDisplayName()+"';";
+                    sql = "UPDATE murder SET ldet = 0, lkil = "+(lk+1)+", "+pri+" WHERE name = '"+detective.getPlayer().getDisplayName()+"';";
                 }
                 else
                 {
-                    sql = "UPDATE murder SET ldet = "+(ld+1)+", lkil = "+(lk+1)+", "+ggg+" WHERE name = '"+cl.getPlayer().getDisplayName()+"';";
+                    sql = "UPDATE murder SET ldet = "+(ld+1)+", lkil = "+(lk+1)+", "+pri+" WHERE name = '"+cl.getPlayer().getDisplayName()+"';";
                 }
 
                 st.execute(sql);
@@ -771,7 +779,7 @@ public class Game
     }*/
 
     // utils
-    Clovek findClovek(Player player) {
+    public Clovek findClovek(Player player) {
         Vector<Clovek> cc = new Vector<>();
         cc.addAll(alive);
         cc.addAll(spect);

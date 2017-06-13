@@ -60,10 +60,18 @@ public class InvBuilder
                 im.addEnchant(Enchantment.LUCK, 1, true);
             }
             else
-                im.setLore(Arrays.asList("",
-                    player.hasPermission("murder.trails."+Traily.getPerm()[i]) ? un : noUn));
-
-            ((PotionMeta) im).setColor(Color.BLACK);
+            {
+                if(player.hasPermission("murder.trails."+Traily.getPerm()[i]))
+                {
+                    im.setLore(Arrays.asList("", un));
+                    ((PotionMeta) im).setColor(Color.GREEN);
+                }
+                else
+                {
+                    im.setLore(Arrays.asList("", noUn));
+                    ((PotionMeta) im).setColor(Color.RED);
+                }
+            }
             is.setItemMeta(im);
             inv.setItem(37+i, is);
         }

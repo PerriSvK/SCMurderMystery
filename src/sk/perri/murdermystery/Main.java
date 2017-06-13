@@ -38,6 +38,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
 public class Main extends JavaPlugin implements Listener
 {
@@ -52,6 +53,8 @@ public class Main extends JavaPlugin implements Listener
     private Map<Projectile, Particle> sipi = new HashMap<>();
     private Database db = DBPool.STATS;
     private Connection conn;
+    //private Map<String, Integer> top = new HashMap<>();
+    private Vector<String> top = new Vector<>();
 
     private static double SwordCooldown = 0.0;
 
@@ -82,6 +85,27 @@ public class Main extends JavaPlugin implements Listener
         Bukkit.getPluginManager().registerEvents(new PingListener(),this);
         swordTimer();
         showPercTimer();
+
+        // TOP PLRS
+        try
+        {
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery("SELECT * FROM murder ORDER BY karma DESC LIMIT 3");
+            while(rs.next())
+            {
+                top.add(rs.getString("name")+" - "+rs.getInt("karma"));
+            }
+
+            rs = st.executeQuery("SELECT * FROM murder ORDER BY games DESC LIMIT 3");
+            while(rs.next())
+            {
+                top.add(rs.getString("name")+" - "+rs.getInt("games"));
+            }
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private void showPercTimer()
@@ -91,8 +115,8 @@ public class Main extends JavaPlugin implements Listener
             if(hra.getAlive().size() != 0)
             {
                 hra.getAlive().forEach(cc -> ActionBarAPI.sendActionBar(cc.getPlayer(),
-                    ChatColor.RED+"      Vrah: "+Math.round(cc.getPerk())+"%      "+ChatColor.BLUE+"Detektiv: "+
-                    Math.round(cc.getPerd())+"%"));
+                    ChatColor.RED+"      Vrah: "+Math.round(cc.getPerk())+"%      "+ChatColor.DARK_AQUA+
+                            "Detektiv: "+Math.round(cc.getPerd())+"%"));
             }
 
         }, 0, 10);
@@ -208,13 +232,18 @@ public class Main extends JavaPlugin implements Listener
                     c.setLkil(rs.getInt("lkil"));
                     c.setScore(rs.getInt("karma"));
                     c.setGames(rs.getInt("games"));
+                    c.setSword(Material.matchMaterial(rs.getString("sword")));
+                    if(rs.getString("trail").equalsIgnoreCase("null"))
+                        c.setTrail(null);
+                    else
+                        c.setTrail(Particle.valueOf(rs.getString("trail")));
                 }
                 else
                 {
                     String sql = "INSERT INTO " +
-                            "murder(name, uuid, lkil, ldet, karma, games)" +
+                            "murder(name, uuid, lkil, ldet, karma, games, sword, trail)" +
                             "VALUES('" + event.getPlayer().getDisplayName() + "', '" + event.getPlayer()
-                            .getUniqueId() + "', 0, 0, 0, 0);";
+                            .getUniqueId() + "', 0, 0, 0, 0, 'IRON_SWORD', 'NULL');";
 
                     st.execute(sql);
                     getLogger().info("Player "+event.getPlayer().getDisplayName()+" has connected for first time, "+
@@ -255,6 +284,9 @@ public class Main extends JavaPlugin implements Listener
         event.getPlayer().sendMessage(new String[]{ChatColor.GOLD+"Ahoj, táto hra je ešte stále vo vývoji!",
                 ChatColor.GOLD+"Môže sa stať, že niečo nebude "+ChatColor.RED+"fungovať"+ChatColor.GOLD+" tak, ako by malo.",
                 ChatColor.GOLD+"Ak nájdeš chybu napíš prosím Perrimu. Ďakujem."});
+        event.getPlayer().sendMessage(ChatColor.YELLOW+"Pro nápovědu použij /murder help");
+        event.getPlayer().sendMessage(ChatColor.RED+"Z technických príčin boli všetky údaje "+ChatColor.BOLD+"vymazané!");
+        event.getPlayer().sendMessage(ChatColor.RED+"Za vzniknuté nepríjemnosti sa ospravedlňujeme. :/");
     }
 
     @EventHandler
@@ -279,6 +311,7 @@ public class Main extends JavaPlugin implements Listener
                 {
                     if (hra.getState() == GameState.Lobby || hra.getState() == GameState.Starting)
                     {
+                        hra.calculatePercentage();
                         hra.getAlive().forEach(c -> c.getSBManager().updateLobbyBoard());
                         hra.getSpect().forEach(c -> c.getSBManager().updateLobbyBoard());
                     }
@@ -317,8 +350,9 @@ public class Main extends JavaPlugin implements Listener
 
             if(c.getType() == PlayerType.Innocent)
             {
-                c.addScore(ScoreTable.ITEM_PICK);
-                c.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.ITEM_PICK+" za sebraný gold!");
+                c.addScore(ScoreTable.ITEM_PICK*event.getItem().getItemStack().getAmount());
+                c.getPlayer().sendMessage(ChatColor.GOLD+"+"+
+                        (ScoreTable.ITEM_PICK*event.getItem().getItemStack().getAmount())+" za sebraný gold!");
             }
 
             if((c.getType() == PlayerType.Innocent || c.getType() == PlayerType.Killer) && pocet >= 10)
@@ -838,7 +872,7 @@ public class Main extends JavaPlugin implements Listener
         double d7 = Math.sin(d5) * Math.sin(d4); // Z
         double d8 = Math.cos(d5); // Y
         int moveTime[] = {0};
-        double speed = 1.0;
+        double speed = 3.0;
 
         moveTask = getServer().getScheduler().runTaskTimer(this, () ->
         {
@@ -918,6 +952,7 @@ public class Main extends JavaPlugin implements Listener
     ArmorStand getSwordStand() { return swordStand; }
     void setBowStand(ArmorStand ne) { bowStand = ne; }
     Map<Projectile, Particle> getSipi() { return sipi; }
+    public Vector<String> getTop() { return top; }
 
     Connection getConn()
     {

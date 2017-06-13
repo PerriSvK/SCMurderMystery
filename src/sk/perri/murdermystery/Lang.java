@@ -56,7 +56,7 @@ class Lang
     static String ROLE = "Role: ";
     static String TIME = "Času zůstává: ";
     static String I_ALIVE = "Občanů: ";
-    static String SCORE = "Skóre: ";
+    static String SCORE = "Karma: ";
     static String DET_ALIVE = "Detektiv: "+ChatColor.BLUE+"ŽIJE";
     static String BOW_DROPPED = ChatColor.GOLD+"Seber luk!";
     static String BOW_PICKUPPED = ChatColor.YELLOW+"Někdo má luk!";
