@@ -285,8 +285,6 @@ public class Main extends JavaPlugin implements Listener
                 ChatColor.GOLD+"Môže sa stať, že niečo nebude "+ChatColor.RED+"fungovať"+ChatColor.GOLD+" tak, ako by malo.",
                 ChatColor.GOLD+"Ak nájdeš chybu napíš prosím Perrimu. Ďakujem."});
         event.getPlayer().sendMessage(ChatColor.YELLOW+"Pro nápovědu použij /murder help");
-        event.getPlayer().sendMessage(ChatColor.RED+"Z technických príčin boli všetky údaje "+ChatColor.BOLD+"vymazané!");
-        event.getPlayer().sendMessage(ChatColor.RED+"Za vzniknuté nepríjemnosti sa ospravedlňujeme. :/");
     }
 
     @EventHandler
