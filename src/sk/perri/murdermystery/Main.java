@@ -1,13 +1,15 @@
 package sk.perri.murdermystery;
 
 import com.connorlinfoot.actionbarapi.ActionBarAPI;
-import me.mirek.devtools.api.DevTools;
-import me.mirek.devtools.api.currencies.PointsAPI;
-import me.mirek.devtools.api.database.DBPool;
-import me.mirek.devtools.api.database.Database;
-import me.mirek.devtools.api.utils.BungeeAPI;
-import me.mirek.devtools.api.utils.TitleAPI;
+
+//import me.mirek.devtools.api.DevTools;
+//import me.mirek.devtools.api.currencies.PointsAPI;
+//import me.mirek.devtools.api.database.DBPool;
+//import me.mirek.devtools.api.database.Database;
+//import me.mirek.devtools.api.utils.BungeeAPI;
+//import me.mirek.devtools.api.utils.TitleAPI;
 import org.bukkit.*;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,9 +38,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 
 public class Main extends JavaPlugin implements Listener
 {
@@ -50,11 +50,13 @@ public class Main extends JavaPlugin implements Listener
     private BukkitTask swordTask = null;
     private BukkitTask moveTask = null;
     private BukkitTask showTask = null;
+    private String worldname = "";
     private Map<Projectile, Particle> sipi = new HashMap<>();
-    private Database db = DBPool.STATS;
+    //private Database db = DBPool.STATS;
     private Connection conn;
     //private Map<String, Integer> top = new HashMap<>();
     private Vector<String> top = new Vector<>();
+    private ConfigurationSection mapsLocations;
 
     private static double SwordCooldown = 0.0;
 
@@ -69,18 +71,28 @@ public class Main extends JavaPlugin implements Listener
         plugin = this;
         getServer().getPluginManager().registerEvents(this, this);
         removeItems();
-        hra = new Game();
         createConfig();
-        getLogger().info("Plugin enabled!");
+        worldname = selectWorld();
+        getLogger().info("Selecting world: "+worldname);
+
+        for(int i = 0; i < getServer().getWorlds().size(); i++)
+            getServer().unloadWorld(getServer().getWorlds().get(i), true);
+
+        getServer().getWorlds().clear();
+
+        getServer().createWorld(new WorldCreator(worldname));
+        getLogger().info(getServer().getWorlds().toString());
+        hra = new Game(worldname);
+
         loadLocations();
         getCommand("setup").setExecutor(new Setup());
         getCommand("murder").setExecutor(new Murder());
 
         // DB
-        db.openConnection();
-        conn = db.getConnection();
+        //db.openConnection();
+        //conn = db.getConnection();
 
-        DevTools.registerChat();
+        //DevTools.registerChat();
 
         Bukkit.getPluginManager().registerEvents(new PingListener(),this);
         swordTimer();
@@ -106,6 +118,12 @@ public class Main extends JavaPlugin implements Listener
         {
             e.printStackTrace();
         }
+        catch (Exception e)
+        {
+            getLogger().info("NO DB!");
+        }
+
+        getLogger().info("Plugin enabled!");
     }
 
     private void showPercTimer()
@@ -151,7 +169,7 @@ public class Main extends JavaPlugin implements Listener
     @Override
     public void onDisable()
     {
-        db.closeConnection();
+        //db.closeConnection();
         getLogger().info("Plugin disabled!");
     }
 
@@ -189,7 +207,7 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onJoin(PlayerJoinEvent event)
     {
-        if(!getConfig().isSet("lobby.x"))
+        if(!getConfig().isSet(worldname+".lobby.x"))
             return;
 
         // INV
@@ -278,7 +296,7 @@ public class Main extends JavaPlugin implements Listener
             getServer().broadcastMessage(Lang.ABLE_TO_START);
             hra.start(false);
         }
-        TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
+        //TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
 
         // BETA INFO
         event.getPlayer().sendMessage(new String[]{ChatColor.GOLD+"Ahoj, táto hra je ešte stále vo vývoji!",
@@ -290,8 +308,12 @@ public class Main extends JavaPlugin implements Listener
     @EventHandler
     public void onSpawn(PlayerSpawnLocationEvent event)
     {
+
         if(lobbyLocation == null)
+        {
+            event.setSpawnLocation(getServer().getWorld(worldname).getSpawnLocation());
             return;
+        }
 
         if(hra.getState() == GameState.Lobby || hra.getState() == GameState.Starting)
             event.setSpawnLocation(lobbyLocation);
@@ -571,7 +593,7 @@ public class Main extends JavaPlugin implements Listener
         {
             event.setCancelled(true);
 
-            BungeeAPI.sendToLobby(event.getPlayer());
+            //BungeeAPI.sendToLobby(event.getPlayer());
             return;
         }
 
@@ -700,7 +722,7 @@ public class Main extends JavaPlugin implements Listener
                 hra.findClovek(event.getPlayer()) != null && !hra.findClovek(event.getPlayer()).getGG())
         {
             hra.findClovek(event.getPlayer()).gg();
-            PointsAPI.addPoints(event.getPlayer(), 20);
+            //PointsAPI.addPoints(event.getPlayer(), 20);
         }
 
     }
@@ -731,12 +753,11 @@ public class Main extends JavaPlugin implements Listener
 
             File file = new File(getDataFolder(), "config.yml");
             if (!file.exists())
-            {
                 getLogger().info(Lang.CONFIG_CREATED);
-                saveDefaultConfig();
-            }
             else
                 getLogger().info(Lang.CONFIG_LOADED);
+
+            //saveDefaultConfig();
         }
         catch (Exception e)
         {
@@ -744,75 +765,105 @@ public class Main extends JavaPlugin implements Listener
         }
     }
 
+    private String selectWorld()
+    {
+        if(!getConfig().isSet("maps"))
+        {
+            if(!getConfig().isSet("lobby.world"))
+                return "";
+            else
+                return getConfig().getString("lobby.world");
+        }
+
+        Set<String> maps = getConfig().getConfigurationSection("maps").getKeys(false);
+        getLogger().info("Available maps: "+maps);
+
+        Random r = new Random();
+        return (String) maps.toArray()[r.nextInt(maps.size())];
+    }
+
     private void loadLocations()
     {
-        if(!getConfig().isSet("lobby.x"))
+        if(!getConfig().isSet("maps."+worldname) || !getConfig().isSet("maps."+worldname+".lobby.x"))
         {
             hra.setState(GameState.Setup);
+            getLogger().info("Neviem najst data pre svet "+worldname);
             return;
         }
 
-        lobbyLocation = new Location(getServer().getWorld(getConfig().getString("lobby.world")),
-                getConfig().getDouble("lobby.x"), getConfig().getDouble("lobby.y"),
-                getConfig().getDouble("lobby.z"), (float) getConfig().getDouble("lobby.yaw"),
-                (float) getConfig().getDouble("lobby.pitch"));
+        mapsLocations = getConfig().getConfigurationSection("maps."+worldname);
 
-        for(int i = 1; i <= getConfig().getConfigurationSection("spawn").getKeys(false).size(); i++)
+        if(!mapsLocations.isSet("lobby.x"))// || !getConfig().isSet(worldname+".spawn.'1'"))
         {
-            hra.getSpawn().add(new Location(getServer().getWorld(getConfig().getString("spawn."+i+".world")),
-                    getConfig().getDouble("spawn."+i+".x"), getConfig().getDouble("spawn."+i+".y"),
-                    getConfig().getDouble("spawn."+i+".z"), (float) getConfig().getDouble("spawn."+i+".yaw"),
-                    (float) getConfig().getDouble("spawn."+i+".pitch")));
+            getLogger().info("Neviem nacitat lobby -> "+worldname+".lobby");
+            return;
         }
 
-        for(int i = 1; i <= getConfig().getConfigurationSection("itemlocation").getKeys(false).size(); i++)
+        lobbyLocation = new Location(getServer().getWorld(worldname),
+                mapsLocations.getDouble("lobby.x"), mapsLocations.getDouble("lobby.y"),
+                mapsLocations.getDouble("lobby.z"), (float) mapsLocations.getDouble("lobby.yaw"),
+                (float) mapsLocations.getDouble("lobby.pitch"));
+
+        if(!mapsLocations.isSet("spawn"))// || !getConfig().isSet(worldname+".spawn.'1'"))
         {
-            hra.getItemsLocation().add(new Location(getServer().getWorld(getConfig().getString("itemlocation."+i+".world")),
-                    getConfig().getDouble("itemlocation."+i+".x"), getConfig().getDouble("itemlocation."+i+".y"),
-                    getConfig().getDouble("itemlocation."+i+".z"), (float) getConfig().getDouble("itemlocation."+i+".yaw"),
-                    (float) getConfig().getDouble("itemlocation."+i+".pitch")));
+            getLogger().info("Neviem nacitat spawn -> "+worldname+".spawn");
+            return;
+        }
+
+        for(int i = 1; i <= mapsLocations.getConfigurationSection("spawn").getKeys(false).size(); i++)
+        {
+            hra.getSpawn().add(new Location( getServer().getWorld(worldname),
+                    mapsLocations.getDouble("spawn."+i+".x"), mapsLocations.getDouble("spawn."+i+".y"),
+                    mapsLocations.getDouble("spawn."+i+".z"), (float) mapsLocations.getDouble("spawn."+i+".yaw"),
+                    (float) mapsLocations.getDouble("spawn."+i+".pitch")));
+        }
+
+        for(int i = 1; i <= mapsLocations.getConfigurationSection("itemlocation").getKeys(false).size(); i++)
+        {
+            hra.getItemsLocation().add(new Location(getServer().getWorld(worldname),
+                    mapsLocations.getDouble("itemlocation."+i+".x"), mapsLocations.getDouble("itemlocation."+i+".y"),
+                    mapsLocations.getDouble("itemlocation."+i+".z"), (float) mapsLocations.getDouble("itemlocation."+i+".yaw"),
+                    (float) mapsLocations.getDouble("itemlocation."+i+".pitch")));
         }
     }
 
     public void setLobbyLocation(Location loc)
     {
-        getConfig().set("lobby.world", loc.getWorld().getName());
-        getConfig().set("lobby.x", loc.getX());
-        getConfig().set("lobby.y", loc.getY()+1);
-        getConfig().set("lobby.z", loc.getZ());
-        getConfig().set("lobby.yaw", loc.getYaw());
-        getConfig().set("lobby.pitch", loc.getPitch());
+        getConfig().set(loc.getWorld().getName()+".lobby.world", loc.getWorld().getName());
+        getConfig().set(loc.getWorld().getName()+".lobby.x", loc.getX());
+        getConfig().set(loc.getWorld().getName()+".lobby.y", loc.getY()+1);
+        getConfig().set(loc.getWorld().getName()+".lobby.z", loc.getZ());
+        getConfig().set(loc.getWorld().getName()+".lobby.yaw", loc.getYaw());
+        getConfig().set(loc.getWorld().getName()+".lobby.pitch", loc.getPitch());
     }
 
     public void setSpawnLocation(Location loc)
     {
         int i = 1;
-        if(getConfig().isSet("spawn.1.x"))
-            i = getConfig().getConfigurationSection("spawn").getKeys(false).size() + 1;
+        if(getConfig().isSet(loc.getWorld().getName()+".spawn.1.x"))
+            i = getConfig().getConfigurationSection(loc.getWorld().getName()+".spawn").getKeys(false).size() + 1;
 
-        getConfig().set("spawn."+i+".world", loc.getWorld().getName());
-        getConfig().set("spawn."+i+".x", loc.getX());
-        getConfig().set("spawn."+i+".y", loc.getY()+1);
-        getConfig().set("spawn."+i+".z", loc.getZ());
-        getConfig().set("spawn."+i+".yaw", loc.getYaw());
-        getConfig().set("spawn."+i+".pitch", loc.getPitch());
-
-
+        getConfig().set(loc.getWorld().getName()+".spawn."+i+".world", loc.getWorld().getName());
+        getConfig().set(loc.getWorld().getName()+".spawn."+i+".x", loc.getX());
+        getConfig().set(loc.getWorld().getName()+".spawn."+i+".y", loc.getY()+1);
+        getConfig().set(loc.getWorld().getName()+".spawn."+i+".z", loc.getZ());
+        getConfig().set(loc.getWorld().getName()+".spawn."+i+".yaw", loc.getYaw());
+        getConfig().set(loc.getWorld().getName()+".spawn."+i+".pitch", loc.getPitch());
     }
 
     public void setItemLocation(Location loc)
     {
         int i = 1;
 
-        if(getConfig().isSet("itemlocation.1.x"))
-            i = getConfig().getConfigurationSection("itemlocation").getKeys(false).size() + 1;
+        if(getConfig().isSet(loc.getWorld().getName()+".itemlocation.1.x"))
+            i = getConfig().getConfigurationSection(loc.getWorld().getName()+".itemlocation").getKeys(false).size() + 1;
 
-        getConfig().set("itemlocation."+i+".world", loc.getWorld().getName());
-        getConfig().set("itemlocation."+i+".x", loc.getX());
-        getConfig().set("itemlocation."+i+".y", loc.getY()+1);
-        getConfig().set("itemlocation."+i+".z", loc.getZ());
-        getConfig().set("itemlocation."+i+".yaw", loc.getYaw());
-        getConfig().set("itemlocation."+i+".pitch", loc.getPitch());
+        getConfig().set(loc.getWorld().getName()+".itemlocation."+i+".world", loc.getWorld().getName());
+        getConfig().set(loc.getWorld().getName()+".itemlocation."+i+".x", loc.getX());
+        getConfig().set(loc.getWorld().getName()+".itemlocation."+i+".y", loc.getY()+1);
+        getConfig().set(loc.getWorld().getName()+".itemlocation."+i+".z", loc.getZ());
+        getConfig().set(loc.getWorld().getName()+".itemlocation."+i+".yaw", loc.getYaw());
+        getConfig().set(loc.getWorld().getName()+".itemlocation."+i+".pitch", loc.getPitch());
     }
 
     private void spawnNewArrow(Arrow arrow, Player entity)
@@ -956,8 +1007,8 @@ public class Main extends JavaPlugin implements Listener
     {
         return conn;
     }
-    Database getDb()
+    /*Database getDb()
     {
         return db;
-    }
+    }*/
 }

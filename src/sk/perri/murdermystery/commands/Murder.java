@@ -80,6 +80,9 @@ public class Murder implements CommandExecutor
             return true;
         }
 
+        if(args[0].equalsIgnoreCase("world"))
+            sender.sendMessage(ChatColor.GOLD+"Si na svete: "+ChatColor.RED+((Player) sender).getLocation().getWorld().getName());
+
         if(Main.get().getServer().getOnlinePlayers().size() < 2)
         {
             sender.sendMessage("Malo hracov, treba aspon 2!");
