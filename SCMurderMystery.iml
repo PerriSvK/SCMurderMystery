@@ -10,6 +10,7 @@
     <orderEntry type="library" name="ActionBarAPI-1.5.2" level="project" />
     <orderEntry type="library" name="CorpseReborn" level="project" />
     <orderEntry type="library" name="spigot" level="project" />
-    <orderEntry type="library" name="DevTools-1.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="DevTools-1.3.3" level="project" />
+    <orderEntry type="library" name="Multiverse-Core-2.5" level="project" />
   </component>
 </module>

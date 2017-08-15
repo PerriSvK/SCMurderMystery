@@ -38,6 +38,7 @@ class Lang
     static String KILLER_STOPPED = ChatColor.GREEN+"Vrah byl zastaven!";
     static String LOOSE = ChatColor.RED+""+ChatColor.BOLD+"PROHRÁL JSI!";
     static String KILLER_LOOSE_REASON = ChatColor.RED+"Nezabil jsi všechny!";
+    static String KILLER_TIME_LOOSE = ChatColor.RED+"Došel ti čas!";
     static String LOOSE_MORE = ChatColor.RED+""+ChatColor.BOLD+"PROHRÁLI JSTE!";
     static String I_LOOSE_REASON = ChatColor.RED+"Všichni občané zemřeli!";
     static String WIN = ChatColor.GREEN+""+ChatColor.BOLD+"VYHRAL JSI!";

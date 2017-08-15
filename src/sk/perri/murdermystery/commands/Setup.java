@@ -44,7 +44,7 @@ public class Setup implements CommandExecutor
 
         if(args[0].equalsIgnoreCase("save"))
         {
-            Main.get().saveConfig();
+            Main.get().getMap().saveConfig();
             sender.sendMessage(ChatColor.GREEN+"Setup complete!");
         }
 
