@@ -8,6 +8,13 @@ import me.mirek.devtools.api.database.DBPool;
 import me.mirek.devtools.api.database.Database;
 import me.mirek.devtools.api.utils.BungeeAPI;
 import me.mirek.devtools.api.utils.TitleAPI;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.server.v1_11_R1.ChatBaseComponent;
+import net.minecraft.server.v1_11_R1.ChatClickable;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -68,19 +75,20 @@ public class Main extends JavaPlugin implements Listener
     public void onEnable()
     {
         plugin = this;
+        Bukkit.getPluginManager().registerEvents(new PingListener(),this);
         getServer().getPluginManager().registerEvents(this, this);
         removeItems();
         createConfig();
         worldname = selectWorld();
         getLogger().info("Selecting world: "+worldname);
 
-        for(int i = 0; i < getServer().getWorlds().size(); i++)
-            getServer().unloadWorld(getServer().getWorlds().get(i), true);
+        /*for(int i = 0; i < getServer().getWorlds().size(); i++)
+            getServer().unloadWorld(getServer().getWorlds().get(i), true);*/
 
         //getServer().getWorlds().clear();
 
         new WorldCreator(worldname).createWorld();
-        getLogger().info(getServer().getWorlds().toString());
+        getLogger().info("Svety: "+getServer().getWorlds().toString());
         gameMap = new GameMap(worldname, this);
         hra = new Game();
 
@@ -94,7 +102,6 @@ public class Main extends JavaPlugin implements Listener
 
         DevTools.registerChat();
 
-        Bukkit.getPluginManager().registerEvents(new PingListener(),this);
         swordTimer();
         showPercTimer();
 
@@ -215,7 +222,7 @@ public class Main extends JavaPlugin implements Listener
         event.getPlayer().getInventory().setHeldItemSlot(0);
 
         // BACK TO LOBBY IS
-        ItemStack btl = new ItemStack(Material.BED, 1);
+        ItemStack btl = new ItemStack(Material.BED, 1, (byte) 14);
         ItemMeta btlim = btl.getItemMeta();
         btlim.setDisplayName(ChatColor.RED+""+ChatColor.BOLD+"ZPĚT DO LOBBY");
         btl.setItemMeta(btlim);
@@ -286,7 +293,7 @@ public class Main extends JavaPlugin implements Listener
         if((hra.getState() != GameState.Lobby) && (hra.getState() != GameState.Starting))
             event.setJoinMessage("");
         else
-            event.setJoinMessage(Lang.PLAYER+ChatColor.YELLOW+" "+event.getPlayer().getDisplayName()+" "+Lang.CONNECTED);
+            event.setJoinMessage(Lang.PLAYER+ChatColor.RED+" "+event.getPlayer().getDisplayName()+" "+Lang.CONNECTED);
 
         if(hra.getAlive().size() >= getConfig().getInt("maxplayers"))
         {
@@ -303,9 +310,17 @@ public class Main extends JavaPlugin implements Listener
         TitleAPI.setTabTitle(event.getPlayer(),"§4§lMurder §f§lMystery\n§7Server: §8" + Bukkit.getServerName(),"§7mc.stylecraft.cz");
 
         // BETA INFO
-        event.getPlayer().sendMessage(new String[]{ChatColor.GOLD+"Ahoj, táto hra je ešte stále vo vývoji!",
-                ChatColor.GOLD+"Môže sa stať, že niečo nebude "+ChatColor.RED+"fungovať"+ChatColor.GOLD+" tak, ako by malo.",
-                ChatColor.GOLD+"Ak nájdeš chybu napíš prosím Perrimu. Ďakujem."});
+        TextComponent mes = new TextComponent(ChatColor.DARK_PURPLE+"BugTracker");
+        mes.setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://stylecraft.cz/issue-tracker"));  //.event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://stylecraft.cz/issue-tracker")).create();
+
+        TextComponent aaa = new TextComponent(ChatColor.YELLOW+"Ahoj, táto hra je ešte stále vo vývoji!");
+        TextComponent bbb = new TextComponent(ChatColor.YELLOW+"Ak nájdeš chybu napíš ju prosím na ");
+        bbb.addExtra(mes);
+
+        event.getPlayer().spigot().sendMessage(aaa);
+        event.getPlayer().spigot().sendMessage(bbb);
+
+        gameMap.joinMessage().forEach(sas -> event.getPlayer().sendMessage(sas));
         event.getPlayer().sendMessage(ChatColor.YELLOW+"Pro nápovědu použij /murder help");
     }
 
@@ -711,6 +726,18 @@ public class Main extends JavaPlugin implements Listener
     public void onSwapEvent(PlayerSwapHandItemsEvent event)
     {
         event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onCommand(PlayerCommandPreprocessEvent event)
+    {
+        String ass = event.getMessage().split(" ")[0];
+        if(ass.equalsIgnoreCase("msg") || ass.equalsIgnoreCase("pm") ||
+                ass.equalsIgnoreCase("tell") || ass.equalsIgnoreCase("m") || ass.equalsIgnoreCase("r"))
+        {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.RED+"Súkromné správy sa tu neposielaju!");
+        }
     }
 
     @EventHandler

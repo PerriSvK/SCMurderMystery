@@ -41,6 +41,7 @@ public class Game
     private DetectiveStatus detectiveStatus = DetectiveStatus.Null;
     private String deName = "";
     private int kkills = 0;
+    private final boolean USE_EXP = false;
 
     Game()
     {
@@ -282,6 +283,7 @@ public class Game
             c.getPlayer().teleport(Main.get().getMap().getSpawn().get(ik.get(i)));
             c.getPlayer().getInventory().clear();
             c.setType(PlayerType.Innocent);
+            c.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, false, false));
         }
 
         // Role role
@@ -615,17 +617,21 @@ public class Game
                 });
                 TitleAPI.sendTitle(killer.getPlayer(),Lang.WIN, 10, 80, 10);
                 TitleAPI.sendSubTitle(killer.getPlayer(),Lang.KILLER_WIN_REASON, 10, 80, 10);
-                PointsAPI.addPoints(killer.getPlayer(), 100);
+                if(USE_EXP)
+                    PointsAPI.addPoints(killer.getPlayer(), 100);
                 LuckyShardsAPI.addLuckyShards(killer.getPlayer(), 10);
                 LevelAPI.addXp(killer.getPlayer(), 50);
                 killer.getPlayer().sendMessage("§8[] §e§l+ 10 LuckyShards");
-                killer.getPlayer().sendMessage("§8[] §2§l+ 50 Experiences");
+                if(USE_EXP)
+                    killer.getPlayer().sendMessage("§8[] §2§l+ 50 Experiences");
                 killer.getPlayer().sendMessage("§8[] §9§l+ 100 StylePoints");
                 ss.add("Vyhrává: "+ChatColor.RED+""+ChatColor.BOLD+"VRAH");
                 ss.add("");
                 ss.add(ChatColor.GRAY+"Vrah: "+killer.getPlayer().getDisplayName()+" ("+kkills+")");
                 ss.add(ChatColor.GRAY+""+ChatColor.STRIKETHROUGH+"Detektív: "+deName);
                 break;
+
+            case KILLER_LEFT:
             case TIME_OUT:
                 alive.forEach(c ->
                 {
@@ -633,56 +639,56 @@ public class Game
                     {
                         c.addScore(ScoreTable.END_ALIVE);
                         c.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.END_ALIVE+" za přežití!");
+                        PointsAPI.addPoints(c.getPlayer(), 50);
+                        LuckyShardsAPI.addLuckyShards(c.getPlayer(), 5);
+                        if(USE_EXP)
+                            LevelAPI.addXp(c.getPlayer(), 20);
+                        c.getPlayer().sendMessage("§8[] §e§l+ 5 LuckyShards");
+                        if(USE_EXP)
+                            c.getPlayer().sendMessage("§8[] §2§l+ 20 Experiences");
+                        c.getPlayer().sendMessage("§8[] §9§l+ 50 StylePoints");
+                        TitleAPI.sendTitle(c.getPlayer(), Lang.WIN_MORE, 10, 80, 10);
                     }
-                });
-                civilians.forEach(p ->
-                {
-                    PointsAPI.addPoints(p, 50);
-                    LuckyShardsAPI.addLuckyShards(p, 5);
-                    LevelAPI.addXp(p, 20);
-                    p.sendMessage("§8[] §e§l+ 5 LuckyShards");
-                    p.sendMessage("§8[] §2§l+ 20 Experiences");
-                    p.sendMessage("§8[] §9§l+ 50 StylePoints");
-                    TitleAPI.sendTitle(p, Lang.WIN_MORE, 10, 80, 10);
                 });
                 TitleAPI.sendTitle(killer.getPlayer(),Lang.LOOSE, 10, 80, 10);
                 TitleAPI.sendSubTitle(killer.getPlayer(),Lang.KILLER_TIME_LOOSE, 10, 80, 10);
                 ss.add("Vyhrávají: "+ChatColor.GREEN+""+ChatColor.BOLD+"OBČANÉ");
                 cc = ChatColor.GREEN;
+                break;
 
             default:
                 alive.forEach(c ->
                 {
                     if(killer != c)
                     {
+                        if(((hero != null && c.getPlayer().getDisplayName().equalsIgnoreCase(hero.getPlayer().getDisplayName()))
+                                || (detectiveStatus == DetectiveStatus.Alive &&
+                                c.getPlayer().getDisplayName().equalsIgnoreCase(detective.getPlayer().getDisplayName()))))
+                        {
+                            PointsAPI.addPoints(c.getPlayer(), 100);
+                            LuckyShardsAPI.addLuckyShards(c.getPlayer(), 10);
+                            if(USE_EXP)
+                                LevelAPI.addXp(c.getPlayer(), 50);
+                            c.getPlayer().sendMessage("§8[] §e§l+ 10 LuckyShards");
+                            if(USE_EXP)
+                                c.getPlayer().sendMessage("§8[] §2§l+ 50 Experiences");
+                            c.getPlayer().sendMessage("§8[] §9§l+ 100 StylePoints");
+                        }
+                        else
+                        {
+                            PointsAPI.addPoints(c.getPlayer(), 50);
+                            LuckyShardsAPI.addLuckyShards(c.getPlayer(), 5);
+                            if(USE_EXP)
+                                LevelAPI.addXp(c.getPlayer(), 20);
+                            c.getPlayer().sendMessage("§8[] §e§l+ 5 LuckyShards");
+                            if(USE_EXP)
+                                c.getPlayer().sendMessage("§8[] §2§l+ 20 Experiences");
+                            c.getPlayer().sendMessage("§8[] §9§l+ 50 StylePoints");
+                        }
+
                         c.addScore(ScoreTable.END_ALIVE);
                         c.getPlayer().sendMessage(ChatColor.GOLD+"+"+ScoreTable.END_ALIVE+" za přežití!");
-                    }
-                });
-
-                civilians.forEach(p ->
-                {
-                    if ((hero != null && p.getDisplayName().equalsIgnoreCase(hero.getPlayer().getDisplayName()))
-                            || (detectiveStatus == DetectiveStatus.Alive &&
-                        p.getDisplayName().equalsIgnoreCase(detective.getPlayer().getDisplayName())))
-                    {
-                        PointsAPI.addPoints(p, 100);
-                        LuckyShardsAPI.addLuckyShards(p, 10);
-                        LevelAPI.addXp(p, 50);
-                        p.sendMessage("§8[] §e§l+ 10 LuckyShards");
-                        p.sendMessage("§8[] §2§l+ 50 Experiences");
-                        p.sendMessage("§8[] §9§l+ 100 StylePoints");
-                        TitleAPI.sendTitle(p, Lang.WIN_MORE, 10, 80, 10);
-                        TitleAPI.sendSubTitle(p, Lang.KILLER_STOPPED, 10, 80, 10);
-                    }
-                    else
-                    {
-                        PointsAPI.addPoints(p, 50);
-                        LuckyShardsAPI.addLuckyShards(p, 5);
-                        LevelAPI.addXp(p, 20);
-                        p.sendMessage("§8[] §e§l+ 5 LuckyShards");
-                        p.sendMessage("§8[] §2§l+ 20 Experiences");
-                        p.sendMessage("§8[] §9§l+ 50 StylePoints");
+                        TitleAPI.sendTitle(c.getPlayer(), Lang.WIN_MORE, 10, 80, 10);
                     }
                 });
 
