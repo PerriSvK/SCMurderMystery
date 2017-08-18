@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="Multiverse-Core-2.5">
+  <library name="NickAPI">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/libraries/Multiverse-Core-2.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libraries/NickAPI.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

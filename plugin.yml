@@ -1,7 +1,7 @@
 name: SCMurderMystery
 version: 1.1.0
 author: PerriSvK
-softdeped: [CorpseReborn,DevTools]
+softdeped: [DevTools]
 main: sk.perri.murdermystery.Main
 commands:
   setup:
@@ -12,6 +12,10 @@ commands:
     description: Minigame base command
     usage: Use "/murder help" to view help
     aliases: [mm]
+  mmdebug:
+    description: Bubug command for MM
+    usage: Use "/mmdebug" for help
+    aliases: [mmd, muderdubug]
 permissions:
   murder.*:
     default: op

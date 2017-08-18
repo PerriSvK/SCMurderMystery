@@ -162,4 +162,11 @@ public class Clovek
     {
         gg = true;
     }
+
+    @Override
+    public String toString()
+    {
+        return "Nick: "+player.getDisplayName()+"; PlayerType: "+type.toString()+"; Alive = "+alive+"; GG = "+gg+
+                "; Score = "+score+"; Games = "+games;
+    }
 }

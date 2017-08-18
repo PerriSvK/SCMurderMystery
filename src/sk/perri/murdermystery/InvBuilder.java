@@ -38,7 +38,7 @@ public class InvBuilder
         ItemMeta noTrailIm = noTrailIs.getItemMeta();
         noTrailIm.setDisplayName(ChatColor.RED+""+ChatColor.BOLD+"Bez trailu");
 
-        if(Main.get().getHra().findClovek(player).getTrail() == null)
+        if(Main.get().getHra().getLudia().get(player.getDisplayName()).getTrail() == null)
         {
             noTrailIm.setLore(Arrays.asList("", se));
             noTrailIm.addEnchant(Enchantment.LUCK, 1, true);
@@ -54,7 +54,7 @@ public class InvBuilder
             ItemMeta im = is.getItemMeta();
             im.setDisplayName(Traily.getNames()[i]);
 
-            if(Main.get().getHra().findClovek(player).getTrail() == Traily.getParticles()[i])
+            if(Main.get().getHra().getLudia().get(player.getDisplayName()).getTrail() == Traily.getParticles()[i])
             {
                 im.setLore(Arrays.asList("", se));
                 im.addEnchant(Enchantment.LUCK, 1, true);
@@ -107,7 +107,7 @@ public class InvBuilder
         ItemMeta im = is.getItemMeta();
         im.setDisplayName(chc+nazov);
 
-        if(Main.get().getHra().findClovek(player).getSword() == m)
+        if(Main.get().getHra().getLudia().get(player.getDisplayName()).getSword() == m)
         {
             im.addEnchant(Enchantment.LUCK, 1, true);
             lore.set(1, ChatColor.GOLD+"Vybrán!");
@@ -123,7 +123,7 @@ public class InvBuilder
     {
         Inventory inv = Bukkit.createInventory(null, 18, ChatColor.AQUA+"HRÁČI");
 
-        for(Clovek c : Main.get().getHra().getAlive())
+        for(Clovek c : Main.get().getHra().getLudia().values())
         {
             ItemStack is = new ItemStack(Material.SKULL_ITEM, 1);
             is.setDurability((short) 3);

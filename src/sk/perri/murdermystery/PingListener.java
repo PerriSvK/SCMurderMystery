@@ -14,8 +14,8 @@ public class PingListener implements Listener
     @EventHandler
     public void onPing(ServerListPingEvent e)
     {
-        //e.setMotd(Main.get().getHra().getState().getMotd());
-        e.setMotd("§a§lLobby");
+        e.setMotd(Main.get().getHra().getState().getMotd());
+        //e.setMotd("§a§lLobby");
         /*e.setMap(Main.get().getMap().getName());
         e.setPlayers(Main.get().getServer().getOnlinePlayers().size());
         e.setMaxPlayers(Main.get().getServer().getMaxPlayers());

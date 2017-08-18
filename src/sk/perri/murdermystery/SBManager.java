@@ -137,7 +137,7 @@ class SBManager
         obj.getScore("   ").setScore(8);
         Team e = board.registerNewTeam("e");
         e.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.I_ALIVE));
-        e.setSuffix(ChatColor.RED+""+Main.get().getHra().getAlive().size());
+        e.setSuffix(ChatColor.RED+""+Main.get().getHra().getLive());
         obj.getScore(ChatColor.GRAY+Lang.I_ALIVE).setScore(7);
         obj.getScore("    ").setScore(6);
         Team f = board.registerNewTeam("f");
@@ -161,7 +161,7 @@ class SBManager
         //cas
         board.getTeam("d").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
         //obcani
-        board.getTeam("e").setSuffix(ChatColor.RED+""+(Main.get().getHra().getAlive().size()-1));
+        board.getTeam("e").setSuffix(ChatColor.RED+""+(Main.get().getHra().getLive()-1));
         // detektiv
 
         String de = "";
@@ -229,7 +229,7 @@ class SBManager
         //cas
         board.getTeam("h").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
         //obcani
-        board.getTeam("i").setSuffix(ChatColor.RED+""+(Main.get().getHra().getAlive().size()-1));
+        board.getTeam("i").setSuffix(ChatColor.RED+""+(Main.get().getHra().getLive()-1));
         // detektiv
         String de = "";
         switch (Main.get().getHra().getDetectiveStatus())

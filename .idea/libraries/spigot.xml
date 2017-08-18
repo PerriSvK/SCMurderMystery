@@ -2,12 +2,10 @@
   <library name="spigot">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/libraries/spigot.jar!/" />
-      <root url="jar://D:/Spigot/BuildTools/spigot.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://D:/Spigot/BuildTools/spigot.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libraries/spigot.jar!/" />
     </SOURCES>
-    <jarDirectory url="jar://$PROJECT_DIR$/libraries/spigot.jar!/" recursive="false" />
   </library>
 </component>

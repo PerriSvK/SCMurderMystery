@@ -45,7 +45,7 @@ public class Murder implements CommandExecutor
 
         if(args[0].equalsIgnoreCase("me"))
         {
-            Clovek c = Main.get().getHra().findClovek((Player) sender);
+            Clovek c = Main.get().getHra().getLudia().get(((Player) sender).getDisplayName());
             if(c == null)
             {
                 sender.sendMessage(ChatColor.RED+"Neviem ta najst!");
