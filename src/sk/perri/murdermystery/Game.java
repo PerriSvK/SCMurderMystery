@@ -62,6 +62,7 @@ public class Game
             player.setFlying(false);
             player.setAllowFlight(false);
             c.setAlive(true);
+            live++;
         }
         else
         {
@@ -75,7 +76,6 @@ public class Game
         }
 
         ludia.put(player.getDisplayName(), c);
-        live++;
 
         return c;
     }
@@ -89,7 +89,7 @@ public class Game
         {
             ludia.get(player.getDisplayName()).addScore(ScoreTable.ALIVE_DISC);
             killPlayer(ludia.get(player.getDisplayName()), false);
-            updateScoreInDB(ludia.get(player.getDisplayName()));
+            updateScoreInDB(ludia.get(player.getDisplayName()), 0);
         }
 
         ludia.get(player.getDisplayName()).setOnline(false);
@@ -109,10 +109,11 @@ public class Game
             c.getSBManager().deleteTeam(player);
         }*/
 
-        if((state == GameState.Starting || state == GameState.Start) && Main.get().getServer().getOnlinePlayers().size() < 2)
+        if((state == GameState.Starting || state == GameState.Start) && Main.get().getServer().getOnlinePlayers().size() < 3)
         {
             stopCountdown();
-            countdown = 60;
+            state = GameState.Lobby;
+            countdown = -1;
         }
 
         ludia.remove(player.getDisplayName());
@@ -207,7 +208,7 @@ public class Game
         clovek.getPlayer().setAllowFlight(true);
         clovek.getPlayer().setFlying(true);
         //DB
-        updateScoreInDB(clovek);
+        updateScoreInDB(clovek, 0);
     }
 
     public Clovek getKiller() {
@@ -586,7 +587,8 @@ public class Game
                     ll[0] = h.getPlayer().getLocation();
             });
 
-            killer.getPlayer().setCompassTarget(ll[0]);
+            if(ll[0] != null)
+                killer.getPlayer().setCompassTarget(ll[0]);
         }
     }
 
@@ -602,7 +604,12 @@ public class Game
         boolean go = false;
         GameOverReason reason = NULL;
 
-        if (!killer.isAlive())
+        if(killer == null)
+        {
+            go = true;
+            reason = KILLER_LEFT;
+        }
+        else if (!killer.isAlive())
         {
             go = true;
             reason = KILLER_DEAD;
@@ -616,11 +623,6 @@ public class Game
         {
             go = true;
             reason = TIME_OUT;
-        }
-        else if(killer == null)
-        {
-            go = true;
-            reason = KILLER_LEFT;
         }
 
         if (go)
@@ -646,6 +648,8 @@ public class Game
     private void gameOver(GameOverReason reason)
     {
         Bukkit.getScheduler().cancelAllTasks();
+
+        Main.get().getLogger().info("Game end with reason: "+reason.name());
 
         if(Main.get().getSwordStand() != null)
             Main.get().getSwordStand().remove();
@@ -754,7 +758,7 @@ public class Game
                 ss.add("Vyhrávají: "+ChatColor.GREEN+""+ChatColor.BOLD+"OBČANÉ");
                 cc = ChatColor.GREEN;
                 ss.add(ChatColor.GRAY+"Vrah: "+killer.getPlayer().getDisplayName()+" ("+kkills+")");
-                ss.add(ChatColor.GRAY+""+(detective.isAlive() ? "" : ChatColor.STRIKETHROUGH)+"Detektív: "+deName);
+                ss.add(ChatColor.GRAY+""+((detective != null && detective.isAlive()) ? "" : ChatColor.STRIKETHROUGH)+"Detektív: "+deName);
                 break;
 
             default:
@@ -767,7 +771,7 @@ public class Game
                 ss.add("");
                 ss.add(ChatColor.GRAY+""+ChatColor.STRIKETHROUGH+"Vrah: "+killer.getPlayer().getDisplayName()+" ("+kkills+")");
                 ss.add(ChatColor.GRAY+""+( detective.isAlive() ? ChatColor.STRIKETHROUGH : "")+"Detektiv: "+deName);
-                if(hero != detective)
+                if(hero != null && hero.getPlayer() != null && hero != detective)
                 {
                     ss.add(ChatColor.GRAY+"Hrdina: "+hero.getPlayer().getDisplayName());
                 }
@@ -790,7 +794,8 @@ public class Game
 
         Main.get().getServer().broadcastMessage(Lang.SERVER_RESTART);
 
-        Bukkit.getScheduler().runTaskLater(Main.get(), () -> ludia.values().forEach(this::updateScoreInDB), 10L);
+        Bukkit.getScheduler().runTaskLater(Main.get(), () -> ludia.values().forEach(c -> updateScoreInDB(c,
+                reason == ALL_DEAD ? 1 : (hero == detective ? 2 : 0))), 10L);
 
         Bukkit.getScheduler().runTaskLater(Main.get(), () ->
                 Main.get().getServer().getOnlinePlayers().forEach(BungeeAPI::sendToLobby), 400);
@@ -891,12 +896,21 @@ public class Game
         return null;
     }*/
 
-    private void updateScoreInDB(Clovek c)
+    private void updateScoreInDB(Clovek c, int stat) // 0 - disconnect, 1 - killer wins, 2 - detective wins
     {
         try
         {
             Statement st = Main.get().getConn().createStatement();
-            String sql = "UPDATE murder SET karma = "+c.getScore()+" WHERE name = '"+c.getPlayer().getDisplayName()+"';";
+            String s = "";
+
+            if(c.getType() == PlayerType.Killer && stat == 1)
+                s = ", wink = "+(c.getWink()+1);
+
+            if(c.getType() == PlayerType.Detective && stat == 2)
+                s = ", wind = "+(c.getWind()+1);
+
+
+            String sql = "UPDATE murder SET karma = "+c.getScore()+s+" WHERE name = '"+c.getPlayer().getDisplayName()+"';";
             st.execute(sql);
             st.close();
         }

@@ -18,6 +18,8 @@ public class Clovek
     private float perd = 0;
     private float perk = 0;
     private int games = 0;
+    private int wink = 0;
+    private int wind = 0;
     private boolean alive = false;
     private boolean online = true;
     private boolean gg = false;
@@ -136,6 +138,26 @@ public class Clovek
     public void setAlive(boolean alive)
     {
         this.alive = alive;
+    }
+
+    public void setWind(int wind)
+    {
+        this.wind = wind;
+    }
+
+    public void setWink(int wink)
+    {
+        this.wink = wink;
+    }
+
+    public int getWind()
+    {
+        return wind;
+    }
+
+    public int getWink()
+    {
+        return wink;
     }
 
     public boolean isAlive()

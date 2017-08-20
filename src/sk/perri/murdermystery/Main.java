@@ -254,6 +254,8 @@ public class Main extends JavaPlugin implements Listener
                     c.setLkil(rs.getInt("lkil"));
                     c.setScore(rs.getInt("karma"));
                     c.setGames(rs.getInt("games"));
+                    c.setWind(rs.getInt("wind"));
+                    c.setWink(rs.getInt("wink"));
                     c.setSword(Material.matchMaterial(rs.getString("sword")));
                     if(rs.getString("trail").equalsIgnoreCase("null"))
                         c.setTrail(null);
@@ -263,9 +265,9 @@ public class Main extends JavaPlugin implements Listener
                 else
                 {
                     String sql = "INSERT INTO " +
-                            "murder(name, uuid, lkil, ldet, karma, games, sword, trail)" +
+                            "murder(name, uuid, lkil, ldet, karma, games, sword, trail, wink, wind)" +
                             "VALUES('" + event.getPlayer().getDisplayName() + "', '" + event.getPlayer()
-                            .getUniqueId() + "', 0, 0, 0, 0, 'IRON_SWORD', 'NULL');";
+                            .getUniqueId() + "', 0, 0, 0, 0, 'IRON_SWORD', 'NULL', 0, 0);";
 
                     st.execute(sql);
                     getLogger().info("Player "+event.getPlayer().getDisplayName()+" has connected for first time, "+
@@ -273,7 +275,6 @@ public class Main extends JavaPlugin implements Listener
                     c.setLdec(0);
                     c.setLkil(0);
                 }
-
                 st.close();
                 hra.calculatePercentage();
             }

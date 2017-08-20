@@ -125,6 +125,9 @@ public class InvBuilder
 
         for(Clovek c : Main.get().getHra().getLudia().values())
         {
+            if(!c.isAlive())
+                continue;
+
             ItemStack is = new ItemStack(Material.SKULL_ITEM, 1);
             is.setDurability((short) 3);
             SkullMeta sm = (SkullMeta) is.getItemMeta();
