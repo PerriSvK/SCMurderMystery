@@ -2,7 +2,8 @@ name: SCMurderMystery
 version: 1.1.0
 author: PerriSvK
 softdeped: [DevTools]
-main: sk.perri.murdermystery.Main
+depend: [Holograms]
+main: sk.perri.murdermystery.MainMurder
 commands:
   setup:
     description: Minigame setup command
@@ -16,6 +17,10 @@ commands:
     description: Bubug command for MM
     usage: Use "/mmdebug" for help
     aliases: [mmd, muderdubug]
+  gadget:
+    description: Gadget setup command
+    usage: /gadget
+    aliases: [gd]
 permissions:
   murder.*:
     default: op

@@ -1,52 +1,59 @@
 package sk.perri.murdermystery.commands;
 
+import java.util.Arrays;
+import me.mirek.devtools.api.DevTools;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import sk.perri.murdermystery.Main;
+import org.bukkit.entity.Player;
+import sk.perri.murdermystery.MainMurder;
+import sk.perri.murdermystery.game.Clovek;
+import sk.perri.murdermystery.game.Ludia;
 
-import java.util.Arrays;
+public class MmDebug implements CommandExecutor {
+    public MmDebug() {
+    }
 
-public class MmDebug implements CommandExecutor
-{
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
-    {
-        if(!sender.isOp())
-        {
-            sender.sendMessage(ChatColor.RED+"Nie pre tvoje oci!");
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!sender.isOp()) {
+            sender.sendMessage(ChatColor.RED + "Nie pre tvoje oci!");
             return true;
-        }
-
-        if(args.length < 1)
-        {
-            sender.sendMessage(ChatColor.YELLOW+"/mmd <players|player>");
+        } else if (args.length < 1) {
+            sender.sendMessage(ChatColor.YELLOW + "/mmd <players|player|stats>");
             return true;
-        }
-
-        if(args[0].equalsIgnoreCase("players"))
-        {
-            sender.sendMessage(Arrays.toString(Main.get().getHra().getLudia().values().toArray()));
-            return true;
-        }
-
-        if(args[0].equalsIgnoreCase("player"))
-        {
-            if(args.length == 2)
-            {
-                if (Main.get().getHra().getLudia().containsKey(args[1]))
-                    sender.sendMessage(Main.get().getHra().getLudia().get(args[1]).toString());
-                else
-                    sender.sendMessage(ChatColor.RED + "Neviem najst hraca " + ChatColor.GOLD + args[1]);
+        } else {
+            if (args[0].equalsIgnoreCase("testlvl")) {
+                String s = sender.getName();
+                MainMurder.get().getLogger().info("LVL TEST FOR: " + s);
+                DevTools.getLevelManager().addExp(s, 1, true);
             }
-            else
-            {
-                sender.sendMessage(ChatColor.RED+"/mmd player <nick>");
-            }
-            return true;
-        }
 
-        return true;
+            if (args[0].equalsIgnoreCase("players")) {
+                sender.sendMessage(Arrays.toString(Ludia.getVsetci().values().toArray()));
+                return true;
+            } else if (args[0].equalsIgnoreCase("player")) {
+                if (args.length == 2) {
+                    Player[] con = new Player[]{null};
+                    Ludia.getVsetci().keySet().forEach((k) -> {
+                        if (k.getDisplayName().contains(args[1])) {
+                            con[0] = k;
+                        }
+
+                    });
+                    if (con[0] != null) {
+                        sender.sendMessage(((Clovek)Ludia.getVsetci().get(con[0])).toString());
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Neviem najst hraca " + ChatColor.GOLD + args[1]);
+                    }
+                } else {
+                    sender.sendMessage(ChatColor.RED + "/mmd player <nick>");
+                }
+
+                return true;
+            } else {
+                return true;
+            }
+        }
     }
 }

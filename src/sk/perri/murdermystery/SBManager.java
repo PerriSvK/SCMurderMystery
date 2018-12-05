@@ -2,255 +2,221 @@ package sk.perri.murdermystery;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.*;
 import sk.perri.murdermystery.enums.GameState;
 import sk.perri.murdermystery.enums.PlayerType;
 
-class SBManager
-{
-    private Scoreboard board;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.NameTagVisibility;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
+
+public class SBManager {
+    private Scoreboard board = MainMurder.get().getServer().getScoreboardManager().getNewScoreboard();
     private Objective obj;
 
     SBManager(Player player)
     {
-        board = Main.get().getServer().getScoreboardManager().getNewScoreboard();
-        player.setScoreboard(board);
-
-        obj = board.registerNewObjective("main", "dummy");
-        obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-        obj.setDisplayName(ChatColor.DARK_RED+""+ChatColor.BOLD+"Murder "+ChatColor.WHITE+""+ChatColor.BOLD+"Mystery");
-
-        if((Main.get().getHra().getState() == GameState.Lobby) || Main.get().getHra().getState() == GameState.Starting)
-            createLobbyTable();
-        else
-            createSpectBoard();
-
-        for(Player p : Main.get().getServer().getOnlinePlayers())
+        player.setScoreboard(this.board);
+        this.obj = this.board.registerNewObjective("main", "dummy");
+        this.obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+        this.obj.setDisplayName(ChatColor.DARK_RED + "" + ChatColor.BOLD + "Murder " + ChatColor.WHITE + "" + ChatColor.BOLD + "Mystery");
+        if (MainMurder.get().getHra().getState() != GameState.Lobby && MainMurder.get().getHra().getState() != GameState.Starting)
         {
-            registerPlayer(p);
+            this.createSpectBoard();
         }
+        else
+        {
+            this.createLobbyTable();
+        }
+
+        MainMurder.get().getServer().getOnlinePlayers().forEach(this::registerPlayer);
     }
 
-    void registerPlayer(Player player)
-    {
-        if(board.getTeam(player.getDisplayName()) != null)
-            return;
+    void registerPlayer(Player player) {
+        if (this.board.getTeam(player.getDisplayName()) == null)
+        {
+            Team team = this.board.registerNewTeam(player.getDisplayName());
+            team.addPlayer(player);
+            team.setNameTagVisibility(NameTagVisibility.NEVER);
+            if (MainMurder.get().getHra().getState() == GameState.Lobby || MainMurder.get().getHra().getState() == GameState.Starting) {
+                this.updateLobbyBoard();
+            }
 
-        Team team = board.registerNewTeam(player.getDisplayName());
-        team.addPlayer(player);
-        team.setNameTagVisibility(NameTagVisibility.NEVER);
-
-        if((Main.get().getHra().getState() == GameState.Lobby) || Main.get().getHra().getState() == GameState.Starting)
-            updateLobbyBoard();
+        }
     }
 
     void createLobbyTable()
     {
-        /*
-            Murder Mystery
-                            7
-        Hraci: 3            6
-                            5
-        Hra zacne o:        4
-        Nie je dost hracov  3
-                            2
-        mc.stylecraft.cz    1
-         */
-
-        obj.getScore("  ").setScore(7);
-        Team a = board.registerNewTeam("a");
-        a.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.ONLINE_PLAYERS));
-        a.setSuffix(ChatColor.RED+""+Main.get().getServer().getOnlinePlayers().size());
-        obj.getScore(ChatColor.GRAY+Lang.ONLINE_PLAYERS).setScore(6);
-        obj.getScore("   ").setScore(5);
-        obj.getScore(ChatColor.GRAY+Lang.G_S_IN).setScore(4);
-        Team b = board.registerNewTeam("b");
-        b.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.RED+""));
+        this.obj.getScore("  ").setScore(7);
+        Team a = this.board.registerNewTeam("a");
+        a.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.ONLINE_PLAYERS));
+        a.setSuffix(ChatColor.RED + "" + MainMurder.get().getServer().getOnlinePlayers().size());
+        this.obj.getScore(ChatColor.GRAY + Lang.ONLINE_PLAYERS).setScore(6);
+        this.obj.getScore("   ").setScore(5);
+        this.obj.getScore(ChatColor.GRAY + Lang.G_S_IN).setScore(4);
+        Team b = this.board.registerNewTeam("b");
+        b.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.RED + ""));
         b.setSuffix(Lang.W_F_PLRS);
-        obj.getScore(ChatColor.RED+"").setScore(3);
-        obj.getScore("    ").setScore(2);
-        obj.getScore(ChatColor.GRAY+"mc.stylecraft.cz").setScore(1);
+        this.obj.getScore(ChatColor.RED + "").setScore(3);
+        this.obj.getScore("    ").setScore(2);
+        this.obj.getScore(ChatColor.GRAY + "mc.stylecraft.cz").setScore(1);
     }
 
     void updateLobbyBoard()
     {
-        if(board.getObjective("main") == null)
-        {
-            createLobbyTable();
-            return;
+        if (this.board.getObjective("main") == null) {
+            this.createLobbyTable();
+        } else {
+            try {
+                this.board.getTeam("a").setSuffix(ChatColor.RED + "" + MainMurder.get().getServer().getOnlinePlayers().size());
+                this.board.getTeam("b").setSuffix(ChatColor.RED + "" + (MainMurder.get().getHra().getCountdown() < 0 ? Lang.W_F_PLRS : MainMurder.get().getHra().getCountdown()));
+                ((Team)((Team)this.board.getTeams().toArray()[0])).getName();
+                String[] s = new String[]{""};
+                this.board.getTeams().forEach((t) -> {
+                    s[0] = s[0] + t.getName() + " ";
+                });
+            } catch (NullPointerException var2) {
+                MainMurder.get().getLogger().warning("UpdateLobbyBoard - null pointer");
+            }
+
+        }
+    }
+
+    void createGameBoard(PlayerType t) {
+        if (this.board.getTeam("d") == null) {
+            if (this.board.getObjective("main") != null) {
+                this.board.getObjective("main").unregister();
+            }
+
+            this.obj = this.board.registerNewObjective("main", "dummy");
+            this.obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+            this.obj.setDisplayName(ChatColor.DARK_RED + "" + ChatColor.BOLD + "Murder " + ChatColor.WHITE + "" + ChatColor.BOLD + "Mystery");
+            Team c = this.board.registerNewTeam("c");
+            c.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.ROLE));
+            String role;
+            if (t == PlayerType.Killer) {
+                role = ChatColor.DARK_RED + "" + ChatColor.BOLD + Lang.KILLER;
+            } else if (t == PlayerType.Detective) {
+                role = ChatColor.BLUE + "" + ChatColor.BOLD + Lang.DETECTIVE;
+            } else if (t == PlayerType.Innocent) {
+                role = ChatColor.GREEN + "" + ChatColor.BOLD + Lang.INNOCENT;
+            } else {
+                role = ChatColor.GRAY + "NIC";
+            }
+
+            c.setSuffix(role);
+            this.obj.getScore(" ").setScore(12);
+            this.obj.getScore(ChatColor.GRAY + Lang.ROLE).setScore(11);
+            this.obj.getScore("  ").setScore(10);
+            Team d = this.board.registerNewTeam("d");
+            d.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.TIME));
+            d.setSuffix(ChatColor.RED + "5:00");
+            this.obj.getScore(ChatColor.GRAY + Lang.TIME).setScore(9);
+            this.obj.getScore("   ").setScore(8);
+            Team e = this.board.registerNewTeam("e");
+            e.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.I_ALIVE));
+            e.setSuffix(ChatColor.RED + "" + MainMurder.get().getHra().getLive());
+            this.obj.getScore(ChatColor.GRAY + Lang.I_ALIVE).setScore(7);
+            this.obj.getScore("    ").setScore(6);
+            Team f = this.board.registerNewTeam("f");
+            f.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.RESET + "" + ChatColor.GRAY));
+            f.setSuffix(Lang.DET_ALIVE);
+            this.obj.getScore(ChatColor.RESET + "" + ChatColor.GRAY).setScore(5);
+            this.obj.getScore("     ").setScore(4);
+            Team g = this.board.registerNewTeam("g");
+            g.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.SCORE));
+            g.setSuffix("0");
+            this.obj.getScore(ChatColor.GRAY + Lang.SCORE).setScore(3);
+            this.obj.getScore("      ").setScore(2);
+            this.obj.getScore(ChatColor.GRAY + "mc.stylecraft.cz").setScore(1);
+        }
+    }
+
+    void updateGameBoard(int score) {
+        if (this.board.getTeam("d") != null) {
+            this.board.getTeam("d").setSuffix(ChatColor.RED + MainMurder.get().getHra().getTimeString());
+            this.board.getTeam("e").setSuffix(ChatColor.RED + "" + (MainMurder.get().getHra().getLive() - 1));
+            String de = "";
+            switch(MainMurder.get().getHra().getDetectiveStatus()) {
+                case Alive:
+                    de = Lang.DET_ALIVE;
+                    break;
+                case New:
+                    de = Lang.BOW_PICKUPPED;
+                    break;
+                case Killed:
+                    de = Lang.BOW_DROPPED;
+                    break;
+                case Null:
+                    de = " ";
+            }
+
+            this.board.getTeam("f").setSuffix(de);
+            this.board.getTeam("g").setSuffix(ChatColor.RED + "" + score);
+        }
+    }
+
+    void createSpectBoard() {
+        if (this.board.getTeam("h") == null) {
+            if (this.board.getObjective("main") != null) {
+                this.board.getObjective("main").unregister();
+            }
+
+            this.obj = this.board.registerNewObjective("main", "dummy");
+            this.obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+            this.obj.setDisplayName(ChatColor.DARK_RED + "" + ChatColor.BOLD + "Murder " + ChatColor.WHITE + "" + ChatColor.BOLD + "Mystery");
+            this.obj.getScore(" ").setScore(8);
+            Team h = this.board.registerNewTeam("h");
+            h.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.TIME));
+            h.setSuffix(ChatColor.RED + "5:00");
+            this.obj.getScore(ChatColor.GRAY + Lang.TIME).setScore(7);
+            this.obj.getScore("  ").setScore(6);
+            Team i = this.board.registerNewTeam("i");
+            i.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + Lang.I_ALIVE));
+            i.setSuffix("-");
+            this.obj.getScore(ChatColor.GRAY + Lang.I_ALIVE).setScore(5);
+            this.obj.getScore("   ").setScore(4);
+            Team j = this.board.registerNewTeam("j");
+            j.addPlayer(MainMurder.get().getServer().getOfflinePlayer(ChatColor.GRAY + ""));
+            j.setSuffix(Lang.DET_ALIVE);
+            this.obj.getScore(ChatColor.GRAY + "").setScore(3);
+            this.obj.getScore("    ").setScore(2);
+            this.obj.getScore(ChatColor.GRAY + "mc.stylecraft.cz").setScore(1);
+        }
+    }
+
+    void updateSpectBoard() {
+        if (this.board.getTeam("h") != null) {
+            this.board.getTeam("h").setSuffix(ChatColor.RED + MainMurder.get().getHra().getTimeString());
+            this.board.getTeam("i").setSuffix(ChatColor.RED + "" + (MainMurder.get().getHra().getLive() - 1));
+            String de = "";
+            switch(MainMurder.get().getHra().getDetectiveStatus()) {
+                case Alive:
+                    de = Lang.DET_ALIVE;
+                    break;
+                case New:
+                    de = Lang.BOW_PICKUPPED;
+                    break;
+                case Killed:
+                    de = Lang.BOW_DROPPED;
+                    break;
+                case Null:
+                    de = "";
+            }
+
+            this.board.getTeam("j").setSuffix(de);
+        }
+    }
+
+    void deleteTeam(Player player) {
+        if (this.board.getTeam(player.getDisplayName()) != null) {
+            this.board.getTeam(player.getDisplayName()).unregister();
         }
 
-        board.getTeam("a").setSuffix(ChatColor.RED+""+Main.get().getServer().getOnlinePlayers().size());
-        board.getTeam("b").setSuffix(ChatColor.RED+""+
-                (Main.get().getHra().getCountdown() < 0 ? Lang.W_F_PLRS : Main.get().getHra().getCountdown()));
     }
 
-    void createGameBoard(PlayerType t)
-    {
-        /*
-           Murder Mystery
-                           12
-        Rola: Obcan        11
-                           10
-        Cas: 3:45           9
-                            8
-        Pocet obcanov: 8    7
-                            6
-        Detektiv: ZIJE      5
-                            4
-        Skore: 1042         3
-                            2
-        mc.stylecraft.cz    1
-         */
-
-        if(board.getTeam("d") != null)
-            return;
-
-        if(board.getObjective("main") != null)
-            board.getObjective("main").unregister();
-
-        obj = board.registerNewObjective("main", "dummy");
-        obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-        obj.setDisplayName(ChatColor.DARK_RED+""+ChatColor.BOLD+"Murder "+ChatColor.WHITE+""+ChatColor.BOLD+"Mystery");
-
-        Team c = board.registerNewTeam("c");
-        c.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.ROLE));
-
-        String role;
-        if(t == PlayerType.Killer)
-            role = ChatColor.DARK_RED+""+ChatColor.BOLD+Lang.KILLER;
-        else if(t == PlayerType.Detective)
-            role = ChatColor.BLUE+""+ChatColor.BOLD+Lang.DETECTIVE;
-        else if(t == PlayerType.Innocent)
-            role = ChatColor.GREEN+""+ChatColor.BOLD+Lang.INNOCENT;
-        else
-            role = ChatColor.GRAY+"NIC";
-        c.setSuffix(role);
-
-        obj.getScore(" ").setScore(12);
-        obj.getScore(ChatColor.GRAY+Lang.ROLE).setScore(11);
-        obj.getScore("  ").setScore(10);
-        Team d = board.registerNewTeam("d");
-        d.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.TIME));
-        d.setSuffix(ChatColor.RED+"5:00");
-        obj.getScore(ChatColor.GRAY+Lang.TIME).setScore(9);
-        obj.getScore("   ").setScore(8);
-        Team e = board.registerNewTeam("e");
-        e.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.I_ALIVE));
-        e.setSuffix(ChatColor.RED+""+Main.get().getHra().getLive());
-        obj.getScore(ChatColor.GRAY+Lang.I_ALIVE).setScore(7);
-        obj.getScore("    ").setScore(6);
-        Team f = board.registerNewTeam("f");
-        f.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.RESET+""+ChatColor.GRAY));
-        f.setSuffix(Lang.DET_ALIVE);
-        obj.getScore(ChatColor.RESET+""+ChatColor.GRAY).setScore(5);
-        obj.getScore("     ").setScore(4);
-        Team g = board.registerNewTeam("g");
-        g.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.SCORE));
-        g.setSuffix("0");
-        obj.getScore(ChatColor.GRAY+Lang.SCORE).setScore(3);
-        obj.getScore("      ").setScore(2);
-        obj.getScore(ChatColor.GRAY+"mc.stylecraft.cz").setScore(1);
-    }
-
-    void updateGameBoard(int score)
-    {
-        if(board.getTeam("d") == null)
-            return;
-
-        //cas
-        board.getTeam("d").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
-        //obcani
-        board.getTeam("e").setSuffix(ChatColor.RED+""+(Main.get().getHra().getLive()-1));
-        // detektiv
-
-        String de = "";
-        switch (Main.get().getHra().getDetectiveStatus())
-        {
-            case Alive: de = Lang.DET_ALIVE; break;
-            case New: de = Lang.BOW_PICKUPPED; break;
-            case Killed: de = Lang.BOW_DROPPED; break;
-            case Null: de = " "; break;
-        }
-
-        board.getTeam("f").setSuffix(de);
-        //score
-        board.getTeam("g").setSuffix(ChatColor.RED+""+score);
-    }
-
-    void createSpectBoard()
-    {
-        /*
-          Murder Mystery
-                            8
-        Cas: 1:32           7
-                            6
-        Obcanov: 2          5
-                            4
-        Zbran je na zemi!   3
-                            2
-        mc.stylecraft.cz    1
-         */
-
-        if(board.getTeam("h") != null)
-            return;
-
-        if(board.getObjective("main") != null)
-            board.getObjective("main").unregister();
-
-        obj = board.registerNewObjective("main", "dummy");
-        obj.setDisplaySlot(DisplaySlot.SIDEBAR);
-        obj.setDisplayName(ChatColor.DARK_RED+""+ChatColor.BOLD+"Murder "+ChatColor.WHITE+""+ChatColor.BOLD+"Mystery");
-
-        obj.getScore(" ").setScore(8);
-        Team h = board.registerNewTeam("h");
-        h.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.TIME));
-        h.setSuffix(ChatColor.RED+"5:00");
-        obj.getScore(ChatColor.GRAY+Lang.TIME).setScore(7);
-        obj.getScore("  ").setScore(6);
-        Team i = board.registerNewTeam("i");
-        i.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+Lang.I_ALIVE));
-        i.setSuffix("-");
-        obj.getScore(ChatColor.GRAY+Lang.I_ALIVE).setScore(5);
-        obj.getScore("   ").setScore(4);
-        Team j = board.registerNewTeam("j");
-        j.addPlayer(Main.get().getServer().getOfflinePlayer(ChatColor.GRAY+""));
-        j.setSuffix(Lang.DET_ALIVE);
-        obj.getScore(ChatColor.GRAY+"").setScore(3);
-        obj.getScore("    ").setScore(2);
-        obj.getScore(ChatColor.GRAY+"mc.stylecraft.cz").setScore(1);
-    }
-
-    void updateSpectBoard()
-    {
-        if(board.getTeam("h") == null)
-            return;
-
-        //cas
-        board.getTeam("h").setSuffix(ChatColor.RED+Main.get().getHra().getTimeString());
-        //obcani
-        board.getTeam("i").setSuffix(ChatColor.RED+""+(Main.get().getHra().getLive()-1));
-        // detektiv
-        String de = "";
-        switch (Main.get().getHra().getDetectiveStatus())
-        {
-            case Alive: de = Lang.DET_ALIVE; break;
-            case New: de = Lang.BOW_PICKUPPED; break;
-            case Killed: de = Lang.BOW_DROPPED; break;
-            case Null: de = ""; break;
-        }
-
-        board.getTeam("j").setSuffix(de);
-    }
-
-    void deleteTeam(Player player)
-    {
-        if(board.getTeam(player.getDisplayName()) != null)
-            board.getTeam(player.getDisplayName()).unregister();
-    }
-
-    Scoreboard getBoard()
-    {
-        return board;
+    Scoreboard getBoard() {
+        return this.board;
     }
 }

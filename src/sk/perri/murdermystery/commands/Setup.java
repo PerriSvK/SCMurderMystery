@@ -2,53 +2,82 @@ package sk.perri.murdermystery.commands;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import sk.perri.murdermystery.Main;
+import sk.perri.murdermystery.MainMurder;
 
-public class Setup implements CommandExecutor
+public class Setup implements org.bukkit.command.CommandExecutor
 {
-    @Override
+    public Setup()
+    {
+    }
+
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if(args.length == 0)
+        if (args.length == 0)
+        {
             return false;
+        }
 
-        if(!(sender instanceof Player))
+        if (!(sender instanceof Player))
         {
             sender.sendMessage("This command can run only player!");
             return true;
         }
 
-        if(!sender.isOp())
+        if(args[0].equalsIgnoreCase("db"))
+        {
+            String[] ss = args;
+            ss[0] = "";
+
+            String sql = String.join(" ", ss);
+
+            MainMurder.get().getDBE().runSql((Player) sender, sql);
             return true;
-
-        if(args[0].equalsIgnoreCase("lobby"))
-        {
-            Main.get().setLobbyLocation(((Player) sender).getLocation());
-            sender.sendMessage(ChatColor.GREEN+"Lobby spawn set!");
         }
 
-        if(args[0].equalsIgnoreCase("spawn"))
+        if(args[0].equalsIgnoreCase("dbs"))
         {
-            Main.get().setSpawnLocation(((Player) sender).getLocation());
-            sender.sendMessage(ChatColor.GREEN+"Spawn added!");
+            String[] ss = args;
+            ss[0] = "";
+
+            String sql = String.join(" ", ss);
+
+            MainMurder.get().getDBE().runSqls((Player) sender, sql);
+            return true;
         }
 
-        if(args[0].equalsIgnoreCase("item"))
+        if (!sender.isOp())
         {
-            Main.get().setItemLocation(((Player) sender).getLocation());
-            sender.sendMessage(ChatColor.GREEN+"Item spawn added!");
+            return true;
+        }
+        if (args[0].equalsIgnoreCase("lobby"))
+        {
+            MainMurder.get().setLobbyLocation(((Player) sender).getLocation());
+            sender.sendMessage(ChatColor.GREEN + "Lobby spawn set!");
         }
 
-        if(args[0].equalsIgnoreCase("save"))
+        if (args[0].equalsIgnoreCase("spawn"))
         {
-            Main.get().getMap().saveConfig();
-            sender.sendMessage(ChatColor.GREEN+"Setup complete!");
+            MainMurder.get().setSpawnLocation(((Player) sender).getLocation());
+            sender.sendMessage(ChatColor.GREEN + "Spawn added!");
         }
 
-        if(args[0].equalsIgnoreCase("help"))
+        if (args[0].equalsIgnoreCase("item"))
+        {
+            MainMurder.get().setItemLocation(((Player) sender).getLocation());
+            sender.sendMessage(ChatColor.GREEN + "Item spawn added!");
+        }
+
+        if(args[0].equalsIgnoreCase(""))
+
+        if (args[0].equalsIgnoreCase("save"))
+        {
+            MainMurder.get().getMap().saveConfig();
+            sender.sendMessage(ChatColor.GREEN + "Setup complete!");
+        }
+
+        if (args[0].equalsIgnoreCase("help"))
         {
             sender.sendMessage("HELP: /setup <lobby|spawn|item|save>");
         }

@@ -7,10 +7,12 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="DevTools-1.3.3" level="project" />
     <orderEntry type="library" name="NickAPI" level="project" />
     <orderEntry type="library" name="ActionBarAPI-1.5.3" level="project" />
-    <orderEntry type="library" name="spigot" level="project" />
     <orderEntry type="library" name="CorpseReborn" level="project" />
+    <orderEntry type="library" name="DevTools-2.0.2" level="project" />
+    <orderEntry type="library" name="SCMurderMystery" level="project" />
+    <orderEntry type="library" name="spigot" level="project" />
+    <orderEntry type="library" name="Holograms-2.5.0-SNAPSHOT" level="project" />
   </component>
 </module>
